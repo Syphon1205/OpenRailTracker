@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>OpenRailTracker</title>
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+      integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+      crossorigin=""
+    />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="brand">
+        <h1>OpenRailTracker</h1>
+        <p class="tagline">Passenger train tracking</p>
+      </div>
+      <div class="status-pill" id="last-updated">Last updated: --</div>
+    </header>
+
+    <main class="layout">
+      <aside class="sidebar">
+        <section class="controls">
+          <div class="control">
+            <label for="search">Search</label>
+            <input id="search" type="text" placeholder="Train number, route, or station" />
+          </div>
+          <div class="control">
+            <label for="source">Source</label>
+            <select id="source">
+              <option value="all">All sources</option>
+              <option value="amtrak">Amtrak</option>
+              <option value="brightline">Brightline</option>
+              <option value="via">VIA Rail</option>
+            </select>
+          </div>
+          <div class="control">
+            <label for="status">Status</label>
+            <select id="status">
+              <option value="all">All statuses</option>
+              <option value="on-time">On time</option>
+              <option value="delayed">Delayed</option>
+              <option value="boarding">Boarding</option>
+              <option value="en-route">En route</option>
+            </select>
+          </div>
+          <button id="refresh" class="primary">Refresh</button>
+        </section>
+
+        <section class="summary">
+          <div class="summary-card">
+            <h2>Total</h2>
+            <p id="summary-total">--</p>
+          </div>
+          <div class="summary-card">
+            <h2>On Time</h2>
+            <p id="summary-ontime">--</p>
+          </div>
+          <div class="summary-card">
+            <h2>Delayed</h2>
+            <p id="summary-delayed">--</p>
+          </div>
+        </section>
+
+        <section class="list-header">
+          <h2>Live Trains</h2>
+          <span class="note">Showing real-time positions when available.</span>
+        </section>
+        <div id="train-list" class="train-list"></div>
+      </aside>
+
+      <section class="map-panel">
+        <div id="map" class="map"></div>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <p>Data from official sources and Transitstat when available.</p>
+    </footer>
+
+    <script
+      src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+      integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+      crossorigin=""
+    ></script>
+    <script src="https://unpkg.com/pmtiles@3.0.6/dist/pmtiles.js"></script>
+    <script src="https://unpkg.com/protomaps-leaflet@1.0.0/dist/protomaps-leaflet.js"></script>
+    <script src="app.js"></script>
+  </body>
+</html>

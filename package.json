@@ -1,0 +1,101 @@
+{
+  "name": "openrailtracker",
+  "version": "0.4.0",
+  "description": "Live passenger rail tracking app for desktop",
+  "private": true,
+  "author": {
+    "name": "OpenRailTracker",
+    "email": "support@openrailtracker.app"
+  },
+  "homepage": "https://openrailtracker.app",
+  "type": "module",
+  "main": "electron/main.cjs",
+  "scripts": {
+    "start": "npm --prefix backend start",
+    "dev": "lsof -ti:3000 | xargs kill -9 2>/dev/null; npm --prefix backend start",
+    "build": "npm --prefix backend install --no-audit --no-fund",
+    "dist": "npm run build && electron-builder",
+    "dist:mac": "npm run build && electron-builder --mac",
+    "dist:linux": "npm run build && electron-builder --linux",
+    "dist:win": "npm run build && electron-builder --win",
+    "dist:all": "npm run build && electron-builder --mac --linux --win",
+    "landmarks:validate": "node scripts/validate-landmark-manifest.mjs",
+    "electron": "electron electron/main.cjs",
+    "electron:dev": "electron electron/main.cjs"
+  },
+  "dependencies": {
+    "express": "^4.19.2",
+    "gtfs-realtime-bindings": "^1.0.0"
+  },
+  "devDependencies": {
+    "electron": "^31.7.7",
+    "electron-builder": "^24.13.3"
+  },
+  "build": {
+    "appId": "com.openrailtracker.app",
+    "productName": "OpenRailTracker",
+    "asar": true,
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "electron/**/*",
+      "package.json"
+    ],
+    "extraResources": [
+      {
+        "from": "backend",
+        "to": "backend"
+      },
+      {
+        "from": "frontend",
+        "to": "frontend"
+      },
+      {
+        "from": "logos",
+        "to": "logos"
+      },
+      {
+        "from": "data",
+        "to": "data"
+      },
+      {
+        "from": "Amtrak_GTFS",
+        "to": "Amtrak_GTFS"
+      },
+      {
+        "from": "DART",
+        "to": "DART"
+      },
+      {
+        "from": "njt_rail_data",
+        "to": "njt_rail_data"
+      },
+      {
+        "from": "viarail",
+        "to": "viarail"
+      }
+    ],
+    "mac": {
+      "target": [
+        "dmg",
+        "zip"
+      ],
+      "category": "public.app-category.travel"
+    },
+    "linux": {
+      "target": [
+        "AppImage",
+        "deb"
+      ],
+      "category": "Utility",
+      "maintainer": "OpenRailTracker <support@openrailtracker.app>"
+    },
+    "win": {
+      "target": [
+        "nsis",
+        "portable"
+      ]
+    }
+  }
+}
