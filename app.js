@@ -123,7 +123,7 @@ async function fetchJson(url, fallback) {
 
 async function loadTrains() {
   const apiPayload = await fetchJson(apiUrl("/api/trains"), null);
-  if (apiPayload?.trains && Array.isArray(apiPayload.trains)) {
+  if (apiPayload?.trains && Array.isArray(apiPayload.trains) && apiPayload.trains.length > 0) {
     return apiPayload.trains.map((train) => normalizeTrain(train, train.source || "amtrak"));
   }
 
