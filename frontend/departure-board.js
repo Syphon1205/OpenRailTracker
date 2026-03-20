@@ -14,6 +14,20 @@ const sourceLabels = {
   dart: "DART",
 };
 
+const BOARD_API_BASE = (() => {
+  const queryBase = new URLSearchParams(window.location.search).get("apiBase") || "";
+  const globalBase = `${window.ORT_API_BASE || ""}`;
+  const base = (queryBase || globalBase).trim();
+  if (base) return base.replace(/\/+$/, "");
+  if (window.location.hostname.endsWith("github.io")) return "https://openrailtracker.app";
+  return "";
+})();
+
+function boardApiUrl(path) {
+  if (!path || !path.startsWith("/")) return path;
+  return `${BOARD_API_BASE}${path}`;
+}
+
 // Split-flap mode inspired by baspete/Split-Flap (MIT):
 // https://github.com/baspete/Split-Flap
 
@@ -467,8 +481,8 @@ function buildSourceOptions(trains) {
 
 async function loadBoard() {
   const [mainRes, commuterRes] = await Promise.all([
-    fetch("/api/trains").then((r) => r.json()).catch(() => ({ trains: [] })),
-    fetch("/api/commuter/trains").then((r) => (r.ok ? r.json() : { trains: [] })).catch(() => ({ trains: [] })),
+    fetch(boardApiUrl("/api/trains")).then((r) => r.json()).catch(() => ({ trains: [] })),
+    fetch(boardApiUrl("/api/commuter/trains")).then((r) => (r.ok ? r.json() : { trains: [] })).catch(() => ({ trains: [] })),
   ]);
 
   const all = [...(mainRes.trains || []), ...(commuterRes.trains || [])];

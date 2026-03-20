@@ -63,6 +63,30 @@ const operatorColors = {
   branson: "#dc2626",
 };
 
+const API_BASE = (() => {
+  const queryBase = new URLSearchParams(window.location.search).get("apiBase") || "";
+  const globalBase = `${window.ORT_API_BASE || ""}`;
+  const base = (queryBase || globalBase).trim();
+  if (base) return base.replace(/\/+$/, "");
+  if (window.location.hostname.endsWith("github.io")) return "https://openrailtracker.app";
+  return "";
+})();
+
+function apiUrl(path) {
+  if (!path || !path.startsWith("/")) return path;
+  return `${API_BASE}${path}`;
+}
+
+function wsUrl(path) {
+  if (!path || !path.startsWith("/")) return path;
+  if (!API_BASE) {
+    const protocol = window.location.protocol === "https:" ? "wss" : "ws";
+    return `${protocol}://${window.location.host}${path}`;
+  }
+  const wsBase = API_BASE.replace(/^https:/i, "wss:").replace(/^http:/i, "ws:");
+  return `${wsBase}${path}`;
+}
+
 // Starter US-wide landmark catalog (expandable): stylized low-poly 3D landmarks.
 const LANDMARKS = [
   { id: "golden-gate", name: "Golden Gate Bridge", state: "CA", lat: 37.8199, lon: -122.4783, height: 160, radius: 140, color: "#f97316" },
@@ -1122,7 +1146,7 @@ async function submitSightingUpload(event) {
   }
 
   try {
-    const response = await fetch("/api/sightings/upload", {
+    const response = await fetch(apiUrl("/api/sightings/upload"), {
       method: "POST",
       body: payload,
     });
@@ -3054,7 +3078,7 @@ function selectTrain(train) {
     const source = encodeURIComponent(train.source || "");
     const id = encodeURIComponent(train.id || "");
     try {
-      const response = await fetch(`/api/train-stops/${source}/${id}`);
+      const response = await fetch(apiUrl(`/api/train-stops/${source}/${id}`));
       const payload = await response.json();
       const stops = Array.isArray(payload?.stops) ? payload.stops : [];
       if (stops.length === 0) {
@@ -3114,7 +3138,7 @@ async function selectStation(station) {
   state.selectedStation = station;
   let payload = { station: null, arrivals: [] };
   try {
-    const response = await fetch(`/api/stations/${station.id}`);
+    const response = await fetch(apiUrl(`/api/stations/${station.id}`));
     payload = await response.json();
   } catch {
     payload = { station: null, arrivals: [] };
@@ -3198,7 +3222,7 @@ function applyFilters(trains) {
 
 async function safeFetchJson(url, fallback) {
   try {
-    const response = await fetch(url);
+    const response = await fetch(apiUrl(url));
     if (!response.ok) {
       if (response.status === 404 && url.startsWith("/api/commuter")) {
         state.commuterAvailable = false;
@@ -3262,8 +3286,7 @@ async function refreshData() {
 }
 
 function initWebSocket() {
-  const protocol = window.location.protocol === "https:" ? "wss" : "ws";
-  const socket = new WebSocket(`${protocol}://${window.location.host}/ws`);
+  const socket = new WebSocket(wsUrl("/ws"));
 
   socket.addEventListener("message", (event) => {
     const message = JSON.parse(event.data);
@@ -3647,7 +3670,7 @@ async function initApp() {
   applyStoredTheme();
   applyUiSettingsToDom();
   try {
-    const configRes = await fetch("/api/config");
+    const configRes = await fetch(apiUrl("/api/config"));
     state.config = await configRes.json();
   } catch (error) {
     state.config = {};
