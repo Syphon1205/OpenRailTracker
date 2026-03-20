@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>OpenRailTracker Departure Board</title>
+    <link rel="stylesheet" href="departure-board.css?v=20260213q" />
+  </head>
+  <body>
+    <main class="board-shell">
+      <header class="board-topbar">
+        <h1>North American Departure Board</h1>
+        <div class="board-controls">
+          <select id="board-source">
+            <option value="all">All Railroads</option>
+          </select>
+          <select id="board-sort" title="Sort departures">
+            <option value="time">Sort: Time</option>
+            <option value="status">Sort: Delay → Early → On Time → Arrived</option>
+          </select>
+          <button id="refresh-board" type="button">Refresh</button>
+          <span id="board-updated">Updated --</span>
+        </div>
+      </header>
+
+      <section class="board-grid" id="board-grid"></section>
+    </main>
+
+    <script src="departure-board.js?v=20260213q"></script>
+  </body>
+</html>

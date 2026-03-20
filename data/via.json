@@ -1,0 +1,11 @@
+[
+  {
+    "id": "VIA-67",
+    "name": "The Corridor",
+    "route": "Toronto → Montréal",
+    "status": "delayed",
+    "nextStop": "Ottawa",
+    "eta": "2:20 PM",
+    "delay": "35 min"
+  }
+]

@@ -1,0 +1,66 @@
+{
+  "provider": "Sketchfab or local GLB",
+  "notes": "Use direct GLB URLs or local /landmarks/models/*.glb files. Ensure license permits redistribution.",
+  "landmarks": [
+    {
+      "id": "golden-gate",
+      "name": "Golden Gate Bridge",
+      "lat": 37.8199,
+      "lon": -122.4783,
+      "altitude": 0,
+      "scaleMeters": 130,
+      "rotateX": 90,
+      "rotateY": 0,
+      "rotateZ": 0,
+      "url": "/landmarks/models/golden-gate.glb"
+    },
+    {
+      "id": "statue-liberty",
+      "name": "Statue of Liberty",
+      "lat": 40.6892,
+      "lon": -74.0445,
+      "altitude": 0,
+      "scaleMeters": 55,
+      "rotateX": 90,
+      "rotateY": 0,
+      "rotateZ": 0,
+      "url": "/landmarks/models/statue-liberty.glb"
+    },
+    {
+      "id": "space-needle",
+      "name": "Space Needle",
+      "lat": 47.6205,
+      "lon": -122.3493,
+      "altitude": 0,
+      "scaleMeters": 70,
+      "rotateX": 90,
+      "rotateY": 0,
+      "rotateZ": 0,
+      "url": "/landmarks/models/space-needle.glb"
+    },
+    {
+      "id": "gateway-arch",
+      "name": "Gateway Arch",
+      "lat": 38.6247,
+      "lon": -90.1848,
+      "altitude": 0,
+      "scaleMeters": 75,
+      "rotateX": 90,
+      "rotateY": 0,
+      "rotateZ": 0,
+      "url": "/landmarks/models/gateway-arch.glb"
+    },
+    {
+      "id": "willis",
+      "name": "Willis Tower",
+      "lat": 41.8789,
+      "lon": -87.6359,
+      "altitude": 0,
+      "scaleMeters": 80,
+      "rotateX": 90,
+      "rotateY": 0,
+      "rotateZ": 0,
+      "url": "/landmarks/models/willis-tower.glb"
+    }
+  ]
+}
