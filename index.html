@@ -51,6 +51,10 @@
           <span   id="quick-live-ratio" class="quick-ratio">--/--</span>
         </div>
 
+        <div class="support-strip">
+          <a id="donate-btn" class="donate-btn" href="https://buymeacoffee.com/tannerdavidson" target="_blank" rel="noopener noreferrer">Donate</a>
+        </div>
+
         <div class="filter-panel" id="filter-panel">
           <select id="source">
             <option value="all">All Sources</option>
@@ -245,6 +249,22 @@
         <h3 id="sighting-modal-title">Upload Heritage Unit</h3>
         <form id="sighting-form" class="sighting-form">
           <input id="sighting-type" type="hidden" value="heritage" />
+          <label class="settings-row" for="sighting-uploader-name">
+            <span class="settings-title">Uploader name</span>
+            <input id="sighting-uploader-name" type="text" placeholder="Your name or handle" required />
+          </label>
+          <label class="settings-row" for="sighting-state">
+            <span class="settings-title">State</span>
+            <select id="sighting-state" required>
+              <option value="">Select a state</option>
+            </select>
+          </label>
+          <label class="settings-row" for="sighting-city">
+            <span class="settings-title">City</span>
+            <select id="sighting-city" required disabled>
+              <option value="">Select a state first</option>
+            </select>
+          </label>
           <label class="settings-row" for="sighting-train">
             <span class="settings-title">What train was it?</span>
             <input id="sighting-train" type="text" placeholder="Train number/name" required />
