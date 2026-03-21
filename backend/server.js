@@ -1152,6 +1152,7 @@ function mergeAmtrakTrains(primary = [], secondary = []) {
 
 async function fetchJson(url) {
   const response = await fetch(url, {
+    signal: typeof AbortSignal !== "undefined" && AbortSignal.timeout ? AbortSignal.timeout(22_000) : undefined,
     headers: {
       "User-Agent": "OpenRailTracker/0.2",
       Accept: "application/json",

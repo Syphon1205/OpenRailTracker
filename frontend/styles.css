@@ -301,6 +301,16 @@ button              { cursor:pointer; border:none; background:none; }
 .train-list::-webkit-scrollbar-track { background: transparent; }
 .train-list::-webkit-scrollbar-thumb { background: var(--border); border-radius:999px; }
 
+.train-list-empty {
+  padding: 14px 12px;
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--muted);
+  border: 1px dashed var(--border);
+  border-radius: var(--radius);
+  background: var(--surface-lo);
+}
+
 /* ── Train Card  ——  subway station board row ───────────────── */
 .train-card {
   border-radius: 5px;

@@ -426,6 +426,8 @@ const state = {
   quickMode: "all",
   uiSettings: { ...defaultUiSettings },
   refreshTimer: null,
+  /** Set when /api/trains fails or returns an error body; cleared on success with data. */
+  dataLoadHint: null,
   locationMarker: null,
   userLocation: null,
   crossingMarker: null,
@@ -2829,6 +2831,21 @@ function renderTrains(trains) {
     elements.list.appendChild(card);
   });
 
+  if (trains.length === 0 && elements.list) {
+    const full = getAllTrains();
+    const empty = document.createElement("div");
+    empty.className = "train-list-empty";
+    if (full.length === 0) {
+      empty.textContent =
+        state.dataLoadHint ||
+        "No trains in the feeds yet. After a cold start the server can take 1–2 minutes to reach all providers — tap Refresh. If this persists, open your Render service logs.";
+    } else {
+      empty.textContent =
+        "No trains match your search or filters. Tap Reset in the quick strip or clear the search box.";
+    }
+    elements.list.appendChild(empty);
+  }
+
   renderDelayQueue();
 }
 
@@ -3236,18 +3253,44 @@ function applyFilters(trains) {
 }
 
 async function safeFetchJson(url, fallback) {
+  const isTrains = url === "/api/trains";
+  const fetchOpts = {
+    cache: "no-store",
+    signal:
+      typeof AbortSignal !== "undefined" && typeof AbortSignal.timeout === "function"
+        ? AbortSignal.timeout(isTrains ? 120_000 : 60_000)
+        : undefined,
+  };
   try {
-    const response = await fetch(apiUrl(url));
+    const response = await fetch(apiUrl(url), fetchOpts);
     if (!response.ok) {
       if (response.status === 404 && url.startsWith("/api/commuter")) {
         state.commuterAvailable = false;
       }
+      if (isTrains) {
+        let detail = `${response.status}`;
+        try {
+          const body = await response.json();
+          if (body?.error) detail = `${body.error} (${response.status})`;
+        } catch {
+          /* ignore */
+        }
+        state.dataLoadHint = `Train data request failed (${detail}). Check Render logs; cold starts need a long first load.`;
+      }
       return fallback;
     }
-    return await response.json();
-  } catch {
+    const data = await response.json();
+    if (isTrains) {
+      state.dataLoadHint = null;
+    }
+    return data;
+  } catch (err) {
     if (url.startsWith("/api/commuter")) {
       state.commuterAvailable = false;
+    }
+    if (isTrains) {
+      const name = err?.name === "TimeoutError" ? "timed out (server may be waking up — wait and tap Refresh)" : (err?.message || "network error");
+      state.dataLoadHint = `Could not load trains: ${name}.`;
     }
     return fallback;
   }
@@ -3300,6 +3343,10 @@ async function refreshData() {
     state.lastUpdateTime = trainsPayload.updatedAt || new Date().toISOString();
     updateTimestamp();
     elements.lastUpdated.classList.add("updating");
+    if (allTrains.length === 0 && state.dataLoadHint && elements.lastUpdated) {
+      elements.lastUpdated.textContent = "No trains loaded yet";
+      elements.lastUpdated.classList.add("updating");
+    }
   } catch (error) {
     elements.lastUpdated.textContent = "Update failed - retrying...";
     elements.lastUpdated.classList.add("updating");
@@ -3725,6 +3772,10 @@ async function initApp() {
   initMap();
   attachEvents();
   await refreshData();
+  // Map "load" can race with refreshData; if data arrived first, train layers were skipped.
+  if (state.map && typeof state.map.loaded === "function" && state.map.loaded()) {
+    renderTrains(applyFilters(getAllTrains()));
+  }
   if (state.backendReachable) {
     initWebSocket();
     scheduleRefresh();
