@@ -18,6 +18,7 @@ const ROOT = path.resolve(__dirname, "..");
 dotenv.config({ path: path.join(__dirname, ".env") });
 
 const app = express();
+app.set("trust proxy", 1);
 const PORT = process.env.PORT || 3000;
 const UPLOADS_ROOT = path.join(ROOT, "uploads");
 const SIGHTINGS_UPLOAD_DIR = path.join(UPLOADS_ROOT, "sightings");
@@ -3431,8 +3432,8 @@ app.get("/api/commuter/routes", async (req, res) => {
   }
 });
 
-const server = app.listen(PORT, () => {
-  console.log(`OpenRailTracker backend running on http://localhost:${PORT}`);
+const server = app.listen(PORT, "0.0.0.0", () => {
+  console.log(`OpenRailTracker backend listening on port ${PORT}`);
 });
 
 server.on("error", (error) => {

@@ -31,14 +31,14 @@ Render sets `PORT` automatically; do not override it. The included `render.yaml`
 
 **Cold starts:** On the free tier the service may sleep; the first request after idle can take ~30–60s.
 
-### 2. Tell GitHub Pages to use that backend
+### After Render shows “Live”
 
-1. On GitHub: repo → **Settings** → **Secrets and variables** → **Actions** → **New repository secret**.
-2. Name: **`ORT_API_BACKEND_URL`**
-3. Value: your Render URL, e.g. `https://openrailtracker-backend.onrender.com`
-4. Push to `main` or re-run the **Deploy to GitHub Pages** workflow. The build injects `window.ORT_API_BASE` so `/api/*` and `wss://…/ws` hit your server.
+1. Open `https://YOUR-SERVICE.onrender.com/api/health` — expect `{"status":"ok"}` (first load may spin ~30–60s if the instance was asleep).
+2. In GitHub: **Settings → Secrets and variables → Actions** → create **`ORT_API_BACKEND_URL`** = that same origin only, e.g. `https://YOUR-SERVICE.onrender.com` (no path, no trailing slash).
+3. **Actions → Deploy to GitHub Pages → Run workflow** (or push to `main`) so the Pages build injects the API URL.
+4. Open `https://<user>.github.io/<repo>/` and confirm trains load.
 
-### 3. Pages source
+### 2. Pages source
 
 **Settings** → **Pages** → **Source**: **GitHub Actions**. Your site is at `https://<user>.github.io/<repo>/`.
 
