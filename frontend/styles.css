@@ -560,6 +560,7 @@ body.compact-cards .train-meta { display:none; }
 .contrib-links a { font-size:10px; color:var(--muted); text-decoration:none; }
 .contrib-links a:hover { color:var(--accent); }
 .contrib-links span { color:var(--dim); font-size:10px; }
+.contrib-api-warning { font-size:10px; line-height:1.4; color:var(--orange); max-width:min(320px, 92vw); }
 
 /* ── Delay Queue ───────────────────────────────────────────── */
 .delay-queue {

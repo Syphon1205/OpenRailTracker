@@ -66,8 +66,12 @@ const operatorColors = {
 const API_BASE = (() => {
   const queryBase = new URLSearchParams(window.location.search).get("apiBase") || "";
   const globalBase = `${window.ORT_API_BASE || ""}`;
-  const base = (queryBase || globalBase).trim();
-  if (base) return base.replace(/\/+$/, "");
+  let base = (queryBase || globalBase).trim();
+  if (base) {
+    base = base.replace(/\/+$/, "");
+    if (base.toLowerCase().endsWith("/api")) base = base.slice(0, -4);
+    return base;
+  }
   if (window.location.hostname.endsWith("github.io")) return "https://openrailtracker.app";
   return "";
 })();
@@ -414,6 +418,8 @@ const state = {
   hoveredMouseY: null,
   trainMarkers: new Map(),
   commuterAvailable: true,
+  /** null until init; false when /api/health fails (e.g. wrong API base on GitHub Pages). */
+  backendReachable: null,
   lastUpdateTime: null,
   photoCache: new Map(),
   photoSelectionToken: 0,
@@ -1266,11 +1272,20 @@ function updateTimestamp() {
 
 function renderContributions() {
   if (!elements.contribLinks) return;
+  if (state.backendReachable === false) {
+    elements.contribLinks.replaceChildren();
+    const hint = document.createElement("span");
+    hint.className = "contrib-api-warning";
+    const target = API_BASE || "your backend URL";
+    hint.textContent = `Cannot reach API (${target}). GitHub Pages: set Actions secret ORT_API_BACKEND_URL to your Render https URL, redeploy “Deploy to GitHub Pages”, or add ?apiBase=YOUR_URL to this page.`;
+    elements.contribLinks.appendChild(hint);
+    return;
+  }
   const contributions = Array.isArray(state.config?.contributions)
     ? state.config.contributions
     : [];
   if (contributions.length === 0) {
-    elements.contribLinks.textContent = "Sources unavailable";
+    elements.contribLinks.textContent = "Credits unavailable";
     return;
   }
   elements.contribLinks.innerHTML = contributions
@@ -3239,6 +3254,13 @@ async function safeFetchJson(url, fallback) {
 }
 
 async function refreshData() {
+  if (state.backendReachable === false) {
+    if (elements.lastUpdated) {
+      elements.lastUpdated.textContent = "Backend unreachable — fix API URL";
+      elements.lastUpdated.classList.add("updating");
+    }
+    return;
+  }
   try {
     const [trainsPayload, stationsPayload, routesPayload] = await Promise.all([
       safeFetchJson("/api/trains", { trains: [], updatedAt: null }),
@@ -3661,6 +3683,15 @@ function attachEvents() {
   });
 }
 
+async function checkBackendHealth() {
+  try {
+    const res = await fetch(apiUrl("/api/health"), { cache: "no-store" });
+    return res.ok;
+  } catch {
+    return false;
+  }
+}
+
 async function initApp() {
   loadUiSettings();
   state.freightVisible = Boolean(state.uiSettings.freightVisible);
@@ -3669,11 +3700,21 @@ async function initApp() {
     : state.mapStyle;
   applyStoredTheme();
   applyUiSettingsToDom();
-  try {
-    const configRes = await fetch(apiUrl("/api/config"));
-    state.config = await configRes.json();
-  } catch (error) {
-    state.config = {};
+  state.backendReachable = await checkBackendHealth();
+  state.config = {};
+  if (state.backendReachable) {
+    try {
+      const configRes = await fetch(apiUrl("/api/config"), { cache: "no-store" });
+      if (configRes.ok) {
+        state.config = await configRes.json();
+      }
+    } catch {
+      state.config = {};
+    }
+  }
+  if (!state.backendReachable && elements.lastUpdated) {
+    elements.lastUpdated.textContent = "Backend unreachable — fix API URL";
+    elements.lastUpdated.classList.add("updating");
   }
   renderContributions();
   buildRailcamStateOptions();
@@ -3684,8 +3725,10 @@ async function initApp() {
   initMap();
   attachEvents();
   await refreshData();
-  initWebSocket();
-  scheduleRefresh();
+  if (state.backendReachable) {
+    initWebSocket();
+    scheduleRefresh();
+  }
 }
 
 initApp();
