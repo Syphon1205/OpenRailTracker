@@ -8,11 +8,28 @@ Modern, map-first passenger rail tracking with real-time updates and a modular, 
 - backend: API + WebSocket server
 - viarail: VIA Rail GTFS static data
 
-## Run
+## Run locally
 
-1. Install backend dependencies.
-2. Start the backend server.
+1. `cd backend && npm install`
+2. `npm start` (from repo root) or `node server.js` (from backend)
 3. Open http://localhost:3000 in a browser.
+
+## Deploy to GitHub Pages
+
+The frontend deploys to GitHub Pages and connects to a remote backend.
+
+1. **Enable GitHub Pages**: In the repo → Settings → Pages → Source: **GitHub Actions**
+2. Push to `main`; the workflow deploys `frontend/` and `logos/` automatically.
+3. Your site will be at `https://<user>.github.io/<repo>/`. It uses `https://openrailtracker.app` as the API when hosted on `github.io`.
+
+To use a different backend URL, set `ORT_API_BASE` before build or pass `?apiBase=https://your-backend.example.com` in the URL.
+
+## Deploy the backend
+
+The backend must run separately (GitHub Pages is static-only). Options:
+
+- **Render**: Connect the repo, use the included `render.yaml`, and set your custom domain (e.g. openrailtracker.app) in the Render dashboard.
+- **Railway / Fly.io**: Run `node backend/server.js` from the repo root; ensure `PORT` is set from the platform.
 
 ## Desktop (Electron)
 

@@ -119,11 +119,11 @@ const LANDMARKS = [
 // Place real GLB models in frontend/landmarks/models and wire them here.
 // These are true 3D landmark models (not extrusions) rendered as a custom WebGL layer.
 const DEFAULT_LANDMARK_MODEL_ASSETS = [
-  { id: "golden-gate", name: "Golden Gate Bridge", lon: -122.4783, lat: 37.8199, altitude: 0, scaleMeters: 130, rotateX: 90, rotateY: 0, rotateZ: 0, url: "/landmarks/models/golden-gate.glb" },
-  { id: "statue-liberty", name: "Statue of Liberty", lon: -74.0445, lat: 40.6892, altitude: 0, scaleMeters: 55, rotateX: 90, rotateY: 0, rotateZ: 0, url: "/landmarks/models/statue-liberty.glb" },
-  { id: "space-needle", name: "Space Needle", lon: -122.3493, lat: 47.6205, altitude: 0, scaleMeters: 70, rotateX: 90, rotateY: 0, rotateZ: 0, url: "/landmarks/models/space-needle.glb" },
-  { id: "gateway-arch", name: "Gateway Arch", lon: -90.1848, lat: 38.6247, altitude: 0, scaleMeters: 75, rotateX: 90, rotateY: 0, rotateZ: 0, url: "/landmarks/models/gateway-arch.glb" },
-  { id: "willis", name: "Willis Tower", lon: -87.6359, lat: 41.8789, altitude: 0, scaleMeters: 80, rotateX: 90, rotateY: 0, rotateZ: 0, url: "/landmarks/models/willis-tower.glb" },
+  { id: "golden-gate", name: "Golden Gate Bridge", lon: -122.4783, lat: 37.8199, altitude: 0, scaleMeters: 130, rotateX: 90, rotateY: 0, rotateZ: 0, url: "landmarks/models/golden-gate.glb" },
+  { id: "statue-liberty", name: "Statue of Liberty", lon: -74.0445, lat: 40.6892, altitude: 0, scaleMeters: 55, rotateX: 90, rotateY: 0, rotateZ: 0, url: "landmarks/models/statue-liberty.glb" },
+  { id: "space-needle", name: "Space Needle", lon: -122.3493, lat: 47.6205, altitude: 0, scaleMeters: 70, rotateX: 90, rotateY: 0, rotateZ: 0, url: "landmarks/models/space-needle.glb" },
+  { id: "gateway-arch", name: "Gateway Arch", lon: -90.1848, lat: 38.6247, altitude: 0, scaleMeters: 75, rotateX: 90, rotateY: 0, rotateZ: 0, url: "landmarks/models/gateway-arch.glb" },
+  { id: "willis", name: "Willis Tower", lon: -87.6359, lat: 41.8789, altitude: 0, scaleMeters: 80, rotateX: 90, rotateY: 0, rotateZ: 0, url: "landmarks/models/willis-tower.glb" },
 ];
 
 const commuterSources = new Set([
@@ -151,8 +151,8 @@ const commuterSources = new Set([
 ]);
 
 const sourceLogoUrls = {
-  njt: "/logos/NJT_logo.svg",
-  mta: "/logos/MTA_NYC_logo.svg",
+  njt: "logos/NJT_logo.svg",
+  mta: "logos/MTA_NYC_logo.svg",
 };
 
 const operatorPhotoFallbacks = {
@@ -446,7 +446,7 @@ function getLandmarkModelAssets() {
 
 async function loadLandmarkModelManifest() {
   try {
-    const response = await fetch("/landmarks/models/manifest.json");
+    const response = await fetch("landmarks/models/manifest.json");
     if (!response.ok) return;
     const manifest = await response.json();
     const raw = Array.isArray(manifest?.landmarks) ? manifest.landmarks : [];

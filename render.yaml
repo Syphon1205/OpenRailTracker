@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: openrailtracker-backend
+    runtime: node
+    region: oregon
+    plan: free
+    buildCommand: npm install --prefix backend --no-audit --no-fund
+    startCommand: node backend/server.js
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        generateValue: true

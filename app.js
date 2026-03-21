@@ -4,20 +4,6 @@ const sourceLabels = {
   via: "VIA Rail",
 };
 
-const API_BASE = (() => {
-  const queryBase = new URLSearchParams(window.location.search).get("apiBase") || "";
-  const globalBase = `${window.ORT_API_BASE || ""}`;
-  const base = (queryBase || globalBase).trim();
-  return base ? base.replace(/\/+$/, "") : "";
-})();
-
-function apiUrl(path) {
-  if (!path || !path.startsWith("/")) {
-    return API_BASE ? `${API_BASE}/${path}` : path;
-  }
-  return `${API_BASE}${path}`;
-}
-
 const sourceFiles = [
   { key: "amtrak", path: "data/amtrak.json" },
   { key: "brightline", path: "data/brightline.json" },
@@ -122,8 +108,8 @@ async function fetchJson(url, fallback) {
 }
 
 async function loadTrains() {
-  const apiPayload = await fetchJson(apiUrl("/api/trains"), null);
-  if (apiPayload?.trains && Array.isArray(apiPayload.trains) && apiPayload.trains.length > 0) {
+  const apiPayload = await fetchJson("api/trains", null);
+  if (apiPayload?.trains && Array.isArray(apiPayload.trains)) {
     return apiPayload.trains.map((train) => normalizeTrain(train, train.source || "amtrak"));
   }
 

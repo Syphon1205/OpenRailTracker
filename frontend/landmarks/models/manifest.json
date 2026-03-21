@@ -12,7 +12,7 @@
       "rotateX": 90,
       "rotateY": 0,
       "rotateZ": 0,
-      "url": "/landmarks/models/golden-gate.glb"
+      "url": "landmarks/models/golden-gate.glb"
     },
     {
       "id": "statue-liberty",
@@ -24,7 +24,7 @@
       "rotateX": 90,
       "rotateY": 0,
       "rotateZ": 0,
-      "url": "/landmarks/models/statue-liberty.glb"
+      "url": "landmarks/models/statue-liberty.glb"
     },
     {
       "id": "space-needle",
@@ -36,7 +36,7 @@
       "rotateX": 90,
       "rotateY": 0,
       "rotateZ": 0,
-      "url": "/landmarks/models/space-needle.glb"
+      "url": "landmarks/models/space-needle.glb"
     },
     {
       "id": "gateway-arch",
@@ -48,7 +48,7 @@
       "rotateX": 90,
       "rotateY": 0,
       "rotateZ": 0,
-      "url": "/landmarks/models/gateway-arch.glb"
+      "url": "landmarks/models/gateway-arch.glb"
     },
     {
       "id": "willis",
@@ -60,7 +60,7 @@
       "rotateX": 90,
       "rotateY": 0,
       "rotateZ": 0,
-      "url": "/landmarks/models/willis-tower.glb"
+      "url": "landmarks/models/willis-tower.glb"
     }
   ]
 }
