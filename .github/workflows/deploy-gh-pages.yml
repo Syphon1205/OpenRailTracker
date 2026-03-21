@@ -28,6 +28,31 @@ jobs:
           mkdir -p deploy/logos
           cp -r logos/* deploy/logos/
 
+      # Set repo secret ORT_API_BACKEND_URL to your hosted backend (e.g. https://openrailtracker-backend.onrender.com)
+      # so GitHub Pages uses your API + WebSocket, not a hardcoded default.
+      - name: Point site at hosted backend (from secret)
+        env:
+          ORT_API_BACKEND_URL: ${{ secrets.ORT_API_BACKEND_URL }}
+        run: |
+          python3 << 'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          url = (os.environ.get("ORT_API_BACKEND_URL") or "").strip().rstrip("/")
+          path = Path("deploy/index.html")
+          text = path.read_text(encoding="utf-8")
+          marker = '    <script src="app.js"></script>'
+          if url and marker in text:
+              inj = f'    <script>window.ORT_API_BASE = {json.dumps(url)};</script>\n'
+              path.write_text(text.replace(marker, inj + marker, 1), encoding="utf-8")
+              print("Injected ORT_API_BASE for:", url)
+          elif url:
+              raise SystemExit("Could not find app.js script tag in deploy/index.html")
+          else:
+              print("ORT_API_BACKEND_URL not set; using app default (github.io → openrailtracker.app if applicable)")
+          PY
+
       - name: Setup Pages
         uses: actions/configure-pages@v4
 

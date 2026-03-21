@@ -14,22 +14,42 @@ Modern, map-first passenger rail tracking with real-time updates and a modular, 
 2. `npm start` (from repo root) or `node server.js` (from backend)
 3. Open http://localhost:3000 in a browser.
 
-## Deploy to GitHub Pages
+## GitHub Pages + live backend (recommended)
 
-The frontend deploys to GitHub Pages and connects to a remote backend.
+GitHub Pages only serves static files; the **Node server must run elsewhere**. Wire them together like this:
 
-1. **Enable GitHub Pages**: In the repo → Settings → Pages → Source: **GitHub Actions**
-2. Push to `main`; the workflow deploys `frontend/` and `logos/` automatically.
-3. Your site will be at `https://<user>.github.io/<repo>/`. It uses `https://openrailtracker.app` as the API when hosted on `github.io`.
+### 1. Host the backend on Render
 
-To use a different backend URL, set `ORT_API_BASE` before build or pass `?apiBase=https://your-backend.example.com` in the URL.
+1. Sign in at [render.com](https://render.com) and connect your GitHub account.
+2. **New** → **Blueprint** → select this repo, or **New Web Service** and:
+   - **Root directory**: leave empty (repo root).
+   - **Build command**: `npm install --prefix backend --no-audit --no-fund`
+   - **Start command**: `node backend/server.js`
+3. Deploy. Copy your service URL, e.g. `https://openrailtracker-backend.onrender.com` (no trailing slash).
 
-## Deploy the backend
+Render sets `PORT` automatically; do not override it. The included `render.yaml` matches the above and uses `/api/health` for health checks.
 
-The backend must run separately (GitHub Pages is static-only). Options:
+**Cold starts:** On the free tier the service may sleep; the first request after idle can take ~30–60s.
 
-- **Render**: Connect the repo, use the included `render.yaml`, and set your custom domain (e.g. openrailtracker.app) in the Render dashboard.
-- **Railway / Fly.io**: Run `node backend/server.js` from the repo root; ensure `PORT` is set from the platform.
+### 2. Tell GitHub Pages to use that backend
+
+1. On GitHub: repo → **Settings** → **Secrets and variables** → **Actions** → **New repository secret**.
+2. Name: **`ORT_API_BACKEND_URL`**
+3. Value: your Render URL, e.g. `https://openrailtracker-backend.onrender.com`
+4. Push to `main` or re-run the **Deploy to GitHub Pages** workflow. The build injects `window.ORT_API_BASE` so `/api/*` and `wss://…/ws` hit your server.
+
+### 3. Pages source
+
+**Settings** → **Pages** → **Source**: **GitHub Actions**. Your site is at `https://<user>.github.io/<repo>/`.
+
+### Fallbacks
+
+- If **`ORT_API_BACKEND_URL`** is not set, the app on `github.io` still falls back to `https://openrailtracker.app` (only works if that host is running this backend).
+- For a one-off test: add `?apiBase=https://your-backend.onrender.com` to the Pages URL.
+
+### Other hosts
+
+**Railway / Fly.io**: same start command `node backend/server.js` from repo root; set `ORT_API_BACKEND_URL` to that service’s public `https` URL.
 
 ## Desktop (Electron)
 

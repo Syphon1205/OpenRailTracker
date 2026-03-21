@@ -6,8 +6,7 @@ services:
     plan: free
     buildCommand: npm install --prefix backend --no-audit --no-fund
     startCommand: node backend/server.js
+    healthCheckPath: /api/health
     envVars:
       - key: NODE_ENV
         value: production
-      - key: PORT
-        generateValue: true
