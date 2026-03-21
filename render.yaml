@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: openrailtracker-backend
+    name: openrailtracker
     runtime: node
     region: oregon
     plan: free

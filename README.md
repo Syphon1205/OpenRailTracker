@@ -4,9 +4,9 @@ Modern, map-first passenger rail tracking with real-time updates and a modular, 
 
 ## Structure
 
-- frontend: map-centric UI
-- backend: API + WebSocket server
-- viarail: VIA Rail GTFS static data
+- **frontend** — map-centric UI (served by the backend)
+- **backend** — Express API + WebSocket server, serves frontend at /
+- **viarail** — VIA Rail GTFS static data
 
 ## Run locally
 
@@ -14,42 +14,25 @@ Modern, map-first passenger rail tracking with real-time updates and a modular, 
 2. `npm start` (from repo root) or `node server.js` (from backend)
 3. Open http://localhost:3000 in a browser.
 
-## GitHub Pages + live backend (recommended)
+## Deploy (Render — one URL, no CORS)
 
-GitHub Pages only serves static files; the **Node server must run elsewhere**. Wire them together like this:
+The backend serves both the API and the frontend. Deploy once; everything runs from a single origin.
 
-### 1. Host the backend on Render
+### Deploy steps
 
 1. Sign in at [render.com](https://render.com) and connect your GitHub account.
-2. **New** → **Blueprint** → select this repo, or **New Web Service** and:
-   - **Root directory**: leave empty (repo root).
-   - **Build command**: `npm install --prefix backend --no-audit --no-fund`
-   - **Start command**: `node backend/server.js`
-3. Deploy. Copy your service URL, e.g. `https://openrailtracker-backend.onrender.com` (no trailing slash).
+2. **New** → **Blueprint** → select this repo (or **New Web Service**).
+3. Use the settings from `render.yaml`:
+   - **Build:** `npm install --prefix backend --no-audit --no-fund`
+   - **Start:** `node backend/server.js`
+   - **Health check path:** `/api/health`
+4. Deploy. Your app is live at `https://YOUR-SERVICE.onrender.com` — frontend, API, and WebSocket all on the same host. No secrets, no CORS, no split deployment.
 
-Render sets `PORT` automatically; do not override it. The included `render.yaml` matches the above and uses `/api/health` for health checks.
+**Cold starts:** On the free tier the service may sleep; the first request after idle can take ~30–60s. Tap Refresh if trains don't load right away.
 
-**Cold starts:** On the free tier the service may sleep; the first request after idle can take ~30–60s.
+### Other hosts (Railway, Fly.io)
 
-### After Render shows “Live”
-
-1. Open `https://YOUR-SERVICE.onrender.com/api/health` — expect `{"status":"ok"}` (first load may spin ~30–60s if the instance was asleep).
-2. In GitHub: **Settings → Secrets and variables → Actions** → create **`ORT_API_BACKEND_URL`** = that same origin only, e.g. `https://YOUR-SERVICE.onrender.com` (no path, no trailing slash).
-3. **Actions → Deploy to GitHub Pages → Run workflow** (or push to `main`) so the Pages build injects the API URL.
-4. Open `https://<user>.github.io/<repo>/` and confirm trains load.
-
-### 2. Pages source
-
-**Settings** → **Pages** → **Source**: **GitHub Actions**. Your site is at `https://<user>.github.io/<repo>/`.
-
-### Fallbacks
-
-- If **`ORT_API_BACKEND_URL`** is not set, the app on `github.io` still falls back to `https://openrailtracker.app` (only works if that host is running this backend).
-- For a one-off test: add `?apiBase=https://your-backend.onrender.com` to the Pages URL.
-
-### Other hosts
-
-**Railway / Fly.io**: same start command `node backend/server.js` from repo root; set `ORT_API_BACKEND_URL` to that service’s public `https` URL.
+Same commands: build from repo root, run `node backend/server.js`. Ensure `PORT` is set by the platform.
 
 ## Desktop (Electron)
 

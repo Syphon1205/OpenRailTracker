@@ -72,7 +72,6 @@ const API_BASE = (() => {
     if (base.toLowerCase().endsWith("/api")) base = base.slice(0, -4);
     return base;
   }
-  if (window.location.hostname.endsWith("github.io")) return "https://openrailtracker.app";
   return "";
 })();
 
@@ -1278,8 +1277,9 @@ function renderContributions() {
     elements.contribLinks.replaceChildren();
     const hint = document.createElement("span");
     hint.className = "contrib-api-warning";
-    const target = API_BASE || "your backend URL";
-    hint.textContent = `Cannot reach API (${target}). GitHub Pages: set Actions secret ORT_API_BACKEND_URL to your Render https URL, redeploy “Deploy to GitHub Pages”, or add ?apiBase=YOUR_URL to this page.`;
+    hint.textContent = API_BASE
+      ? `Cannot reach API at ${API_BASE}. Check the URL or add ?apiBase=YOUR_BACKEND_URL to override.`
+      : "Cannot reach API. If deployed: the service may be waking up — wait 1–2 min and tap Refresh. If local: run the backend (npm start).";
     elements.contribLinks.appendChild(hint);
     return;
   }
