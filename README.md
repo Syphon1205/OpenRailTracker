@@ -1,81 +1,98 @@
-# OpenRailTracker
+# OpenRailTracker v1.0.0
 
-Modern, map-first passenger rail tracking with real-time updates and a modular, open-source architecture.
+OpenRailTracker is a Node/Express rail-tracking application that serves a static MapLibre frontend and aggregates passenger, commuter, freight, signal, alert, and GTFS data across North America.
 
-## Structure
+## v1.0.0 Release Highlights
 
-- **frontend** — map-centric UI (served by the backend)
-- **backend** — Express API + WebSocket server, serves frontend at /
-- **viarail** — VIA Rail GTFS static data
+✨ **New Features:**
+- Desktop applications for macOS (Intel & Apple Silicon) and Windows
+- Cinematic welcome screen with live rail map for first-time users
+- Gallery as a dedicated tab with back button navigation
+- Enhanced symbol support from OpenRailwayMap vector tiles
+- Improved UI/UX with modern glass-style panels and smooth animations
+- Download desktop button in web version
 
-## Run locally
+🎯 **Improvements:**
+- Removed train protection toggle (signals/ATCS data still visible through map layers)
+- Cleaner map display without yard dots
+- Dark graphite tones with soft cyan highlights
+- Premium dispatcher/radar software aesthetic
+- Optimized for both web and desktop platforms
 
-1. `cd backend && npm install`
-2. `npm start` (from repo root) or `node server.js` (from backend)
-3. Open http://localhost:3000 in a browser.
+This repository was reconstructed from a container image. Treat the current history as a recovered baseline, not the original project history.
 
-## Deploy (Render — one URL, no CORS)
+## Project Layout
 
-The backend serves both the API and the frontend. Deploy once; everything runs from a single origin.
+- `backend/` - Express API, WebSocket server, data loaders, alert scraping, and signal APIs.
+- `backend/signals/` - signal repository, event bus, OpenRailwayMap lookup, and ATCS normalization.
+- `frontend/` - static browser app served by Express.
+- `data/` - committed seed/runtime JSON needed by the app.
+- `logos/` - static operator logos.
+- `*_GTFS/`, `*_data/`, `viarail/`, `DART/`, etc. - recovered static GTFS datasets used by loaders.
+- `uploads/` - runtime user uploads; ignored by Git.
 
-### Deploy steps
+## Requirements
 
-1. Sign in at [render.com](https://render.com) and connect your GitHub account.
-2. **New** → **Blueprint** → select this repo (or **New Web Service**).
-3. Use the settings from `render.yaml`:
-   - **Build:** `npm install --prefix backend --no-audit --no-fund`
-   - **Start:** `node backend/server.js`
-   - **Health check path:** `/api/health`
-4. Deploy. Your app is live at `https://YOUR-SERVICE.onrender.com` — frontend, API, and WebSocket all on the same host. No secrets, no CORS, no split deployment.
+- Node.js 22 or newer is recommended.
+- npm 11 or newer.
+- Optional: Docker and Docker Compose.
+- Optional: PostgreSQL for persistent signal storage.
+- Optional: Redis for signal pub/sub across multiple app instances.
 
-**Cold starts:** On the free tier the service may sleep; the first request after idle can take ~30–60s. Tap Refresh if trains don't load right away.
+## Local Development
 
-### Other hosts (Railway, Fly.io)
+```bash
+cd backend
+npm ci
+cp .env.example .env
+npm run dev
+```
 
-Same commands: build from repo root, run `node backend/server.js`. Ensure `PORT` is set by the platform.
+Open `http://localhost:3000`.
 
-## Desktop (Electron)
+The backend serves the frontend from `frontend/`, exposes REST endpoints under `/api`, and uses `/ws` for live updates.
 
-Run desktop app with bundled local backend:
+## Environment
 
-1. `npm install`
-2. `npm run electron`
+Use `backend/.env.example` as the source of truth for supported environment variables. Do not commit `backend/.env` or provider tokens.
 
-This includes:
+Important variables for a fuller local run include:
 
-- Splash screen
-- App icon
-- First-boot welcome screen
+- `METRA_GTFS_API_TOKEN` for Metra GTFS-RT/static access.
+- `PROTOMAPS_KEY` or custom style URLs for map styling.
+- `SIGNAL_DATABASE_URL` or `DATABASE_URL` for PostgreSQL-backed signal storage.
+- `REDIS_URL` for cross-process signal event pub/sub.
 
-Current focus is the Electron desktop client.
+## Docker
 
-## Data sources
+Build and run with Compose:
 
-- Amtrak: Transitstat (real-time)
-- Brightline: GTFS-RT from feed.gobrightline.com (real-time)
-- VIA Rail: local GTFS static data from viarail
+```bash
+docker compose up --build
+```
 
-## Basemap
+The compose file reads `backend/.env` if present and bind-mounts `data/`, `uploads/`, and `Metra/` so runtime caches, uploads, and Metra downloads survive container restarts.
 
-Tiles are served via CARTO raster tiles on the frontend.
+## Verification
 
-## Routes
+Useful checks after recovery or edits:
 
-Routes are loaded from:
+```bash
+cd backend
+npm ls --depth=0
+node --check server.js
+```
 
-- Amtrak shapes GeoJSON (Transitstat)
-- Brightline shapes GeoJSON (Transitstat)
-- VIA Rail GTFS shapes from viarail
+From the repository root:
 
-To connect an official source or override defaults, set the following environment variables:
+```bash
+node --check frontend/app.js
+node --check frontend/departure-board.js
+```
 
-- AMTRAK_URL, BRIGHTLINE_URL, VIA_URL
-- AMTRAK_DATA_PATH, BRIGHTLINE_DATA_PATH, VIA_DATA_PATH (optional dot-path to the array in the JSON response)
+## Known Recovery Notes
 
-The API expects each source to return an array of train objects. Fields are normalized automatically where possible.
-
-## Next steps
-
-- Replace the data source URLs with official endpoints when approved for use.
-- Add authentication headers if required by the official source.
-- Add a polling interval in the UI for auto-refresh.
+- Original Git history, README, Docker files, and deployment files were not recovered.
+- `Metra/GTFSAPIREQUEST.txt` is intentionally ignored because the recovered file contained an API token.
+- `Metra/GTFS/` was not present in the recovered tree; the backend can recreate it when a valid Metra token is available.
+- `npm ci` currently reports audit findings in transitive dependencies. Review before running `npm audit fix`, because automated fixes may change runtime behavior.

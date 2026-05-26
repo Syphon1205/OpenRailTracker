@@ -1,0 +1,393 @@
+/* ════════════════════════════════════════════════════════════════════
+   Welcome Screen CSS - v1.0.0 Arrival Experience
+   ════════════════════════════════════════════════════════════════════ */
+
+.welcome-modal-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 99999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  animation: welcomeModalEnter 0.8s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+.welcome-modal-container.welcome-modal-exit {
+  animation: welcomeModalExit 0.6s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+@keyframes welcomeModalEnter {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes welcomeModalExit {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+.welcome-modal-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(8, 16, 32, 0.15);
+}
+
+.welcome-modal-background {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+#welcome-modal-map-canvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.welcome-modal-blur {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  backdrop-filter: blur(8px);
+  background: linear-gradient(135deg, rgba(15, 23, 42, 0.35) 0%, rgba(30, 41, 59, 0.45) 100%);
+  animation: welcomeBlurFade 1.2s ease-out forwards;
+}
+
+@keyframes welcomeBlurFade {
+  from {
+    backdrop-filter: blur(12px);
+    background: linear-gradient(135deg, rgba(15, 23, 42, 0.55) 0%, rgba(30, 41, 59, 0.65) 100%);
+  }
+  to {
+    backdrop-filter: blur(8px);
+    background: linear-gradient(135deg, rgba(15, 23, 42, 0.35) 0%, rgba(30, 41, 59, 0.45) 100%);
+  }
+}
+
+.welcome-modal-glass-panel {
+  position: relative;
+  z-index: 10;
+  max-width: 460px;
+  width: 90%;
+  background: rgba(15, 23, 42, 0.92);
+  border: 1px solid rgba(132, 215, 255, 0.18);
+  border-radius: 20px;
+  backdrop-filter: blur(20px);
+  box-shadow: 
+    0 8px 32px rgba(0, 0, 0, 0.3),
+    inset 0 1px 1px rgba(255, 255, 255, 0.1);
+  padding: 48px 40px;
+  animation: welcomePanelSlide 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+@keyframes welcomePanelSlide {
+  from {
+    transform: translateY(40px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.welcome-panel-content {
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+}
+
+.welcome-panel-header {
+  text-align: center;
+}
+
+.welcome-panel-title {
+  font-size: 32px;
+  font-weight: 700;
+  color: #f8fafc;
+  margin: 0;
+  letter-spacing: -0.5px;
+  animation: welcomeTitleFade 0.8s ease-out 0.2s forwards;
+  opacity: 0;
+}
+
+@keyframes welcomeTitleFade {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.welcome-panel-subtitle {
+  font-size: 14px;
+  color: #94a3b8;
+  margin: 12px 0 0 0;
+  font-weight: 500;
+  animation: welcomeSubtitleFade 0.8s ease-out 0.3s forwards;
+  opacity: 0;
+}
+
+@keyframes welcomeSubtitleFade {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.welcome-panel-features {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  animation: welcomeFeaturesFade 0.8s ease-out 0.4s forwards;
+  opacity: 0;
+}
+
+@keyframes welcomeFeaturesFade {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.welcome-feature {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 16px;
+  background: rgba(132, 215, 255, 0.08);
+  border: 1px solid rgba(132, 215, 255, 0.12);
+  border-radius: 12px;
+  transition: all 0.3s ease;
+}
+
+.welcome-feature:hover {
+  background: rgba(132, 215, 255, 0.14);
+  border-color: rgba(132, 215, 255, 0.24);
+  transform: translateY(-2px);
+}
+
+.welcome-feature-icon {
+  font-size: 24px;
+  line-height: 1;
+}
+
+.welcome-feature-text {
+  font-size: 12px;
+  color: #cbd5e1;
+  text-align: center;
+  font-weight: 500;
+}
+
+.welcome-download-section {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 20px;
+  background: rgba(15, 23, 42, 0.5);
+  border: 1px solid rgba(132, 215, 255, 0.12);
+  border-radius: 12px;
+  animation: welcomeDownloadFade 0.8s ease-out 0.5s forwards;
+  opacity: 0;
+}
+
+@keyframes welcomeDownloadFade {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.welcome-download-subtitle {
+  font-size: 12px;
+  color: #94a3b8;
+  margin: 0;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.welcome-download-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.welcome-download-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 12px 16px;
+  background: rgba(132, 215, 255, 0.1);
+  border: 1px solid rgba(132, 215, 255, 0.2);
+  border-radius: 8px;
+  color: #cbd5e1;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: inherit;
+}
+
+.welcome-download-btn:hover {
+  background: rgba(132, 215, 255, 0.18);
+  border-color: rgba(132, 215, 255, 0.4);
+  color: #f8fafc;
+  transform: translateX(2px);
+}
+
+.welcome-download-btn svg {
+  width: 18px;
+  height: 18px;
+}
+
+.welcome-enter-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 16px 24px;
+  background: linear-gradient(135deg, #84d7ff 0%, #7fb3ff 100%);
+  border: none;
+  border-radius: 12px;
+  color: #0b0f14;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  font-family: inherit;
+  box-shadow: 0 8px 24px rgba(132, 215, 255, 0.3);
+  animation: welcomeButtonFade 0.8s ease-out 0.6s forwards;
+  opacity: 0;
+}
+
+@keyframes welcomeButtonFade {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.welcome-enter-btn:hover {
+  background: linear-gradient(135deg, #91d0ff 0%, #8ca5ff 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 12px 32px rgba(132, 215, 255, 0.4);
+}
+
+.welcome-enter-btn:active {
+  transform: translateY(0);
+  box-shadow: 0 4px 12px rgba(132, 215, 255, 0.2);
+}
+
+.welcome-enter-btn svg {
+  width: 20px;
+  height: 20px;
+  transition: transform 0.3s ease;
+}
+
+.welcome-enter-btn:hover svg {
+  transform: translateX(4px);
+}
+
+.welcome-panel-version {
+  text-align: center;
+  font-size: 11px;
+  color: #64748b;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+  animation: welcomeVersionFade 0.8s ease-out 0.7s forwards;
+  opacity: 0;
+}
+
+@keyframes welcomeVersionFade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* Mobile responsive */
+@media (max-width: 640px) {
+  .welcome-modal-glass-panel {
+    padding: 40px 24px;
+    max-width: 100%;
+    margin: 0 16px;
+  }
+
+  .welcome-panel-title {
+    font-size: 26px;
+  }
+
+  .welcome-panel-features {
+    grid-template-columns: 1fr;
+  }
+
+  .welcome-download-buttons {
+    flex-direction: column;
+  }
+
+  .welcome-enter-btn {
+    padding: 14px 20px;
+    font-size: 15px;
+  }
+}
+
+/* Smooth transition when entering operations */
+.welcome-modal-container.welcome-modal-transitioning .welcome-modal-blur {
+  animation: welcomeBlurSharp 0.6s ease-out forwards;
+}
+
+@keyframes welcomeBlurSharp {
+  from {
+    backdrop-filter: blur(8px);
+    background: linear-gradient(135deg, rgba(15, 23, 42, 0.35) 0%, rgba(30, 41, 59, 0.45) 100%);
+  }
+  to {
+    backdrop-filter: blur(0px);
+    background: transparent;
+  }
+}

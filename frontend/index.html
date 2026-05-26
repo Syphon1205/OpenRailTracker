@@ -1,300 +1,1014 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-    <meta name="theme-color" content="#08101f" />
-    <meta name="apple-mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-    <title>OpenRailTracker</title>
-    <link href="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.css" rel="stylesheet" />
-    <link rel="stylesheet" href="styles.css" />
-  </head>
-  <body>
 
-    <!-- MAIN APP: sidebar left + map right -->
-    <div class="app">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#08101f" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <title>OpenRailTracker</title>
+  <meta name="description"
+    content="OpenRailTracker is a live rail tracking platform for passenger rail across North America. Monitor train speed, heading, and real-time station status." />
 
-      <!-- LEFT SIDEBAR -->
-      <aside class="sidebar" id="sidebar">
+  <link href="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.css" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+  <link rel="stylesheet" href="welcome-screen.css" />
+</head>
 
-        <div class="sidebar-header">
-          <div class="brand">
-            <h1>OpenRailTracker <span class="app-version">v0.8.0</span></h1>
-            <span id="train-count" class="count-badge">0 trains</span>
-          </div>
-          <div class="header-tools">
-            <button id="toggle-search" class="tool-btn" data-active="true" title="Toggle search">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-            </button>
-            <button id="refresh" class="tool-btn" title="Refresh">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
-            </button>
-            <button id="toggle-settings" class="tool-btn" title="Settings">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
-            </button>
-          </div>
+<body>
+  <div id="initial-loader" class="initial-loader">
+    <div class="loader-content">
+      <h1 class="loader-app-name">OpenRailTracker</h1>
+      <div class="loader-spinner"></div>
+      <p>Loading all data...</p>
+      <span class="loader-subtext">Synchronizing trains, routes, and stations</span>
+    </div>
+  </div>
+
+  <!-- MAIN APP: sidebar left + map right -->
+  <div class="app">
+    <header class="topbar">
+      <div class="topbar-brand">
+        <span class="topbar-brand-name">OpenRailTracker</span>
+        <span class="topbar-brand-version">BETA</span>
+      </div>
+      <div class="topbar-actions">
+        <button id="open-gallery-modal" class="topbar-nav-item" type="button" title="Open photo gallery">Gallery</button>
+        <button id="open-download-modal" class="topbar-nav-item" type="button" title="Download desktop app">Download</button>
+        <button id="account-toggle" class="account-toggle" title="Open account panel" aria-label="Open account panel" aria-expanded="false">
+          <span class="account-toggle-avatar">G</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- LEFT SIDEBAR -->
+    <aside class="sidebar" id="sidebar">
+
+      <div class="sidebar-header">
+        <div class="brand">
+          <h1>Live Board</h1>
+          <p class="brand-description">Filter the map, scan active trains, and jump into details without losing the national view.</p>
         </div>
-
-        <div class="floating-search active">
-          <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-          <input id="search" type="text" placeholder="Search trains, routes, stations…" autocomplete="off" />
-          <button id="toggle-filters" class="filter-toggle" data-active="false" title="Filters">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="6" x2="20" y2="6"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="11" y1="18" x2="13" y2="18"/></svg>
+        <div class="header-tools">
+          <button id="toggle-search" class="tool-btn" data-active="true" title="Toggle search">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+              stroke-linejoin="round">
+              <circle cx="11" cy="11" r="8" />
+              <line x1="21" y1="21" x2="16.65" y2="16.65" />
+            </svg>
           </button>
-        </div>
-
-        <div class="quick-strip" id="quick-strip">
-          <button id="quick-live"       class="quick-chip" data-active="false">Live</button>
-          <button id="quick-delay"      class="quick-chip" data-active="false">Delayed</button>
-          <button id="quick-reset"      class="quick-chip ghost">Reset</button>
-          <span   id="quick-live-ratio" class="quick-ratio">--/--</span>
-        </div>
-
-        <div class="support-strip">
-          <a id="donate-btn" class="donate-btn" href="https://buymeacoffee.com/tannerdavidson" target="_blank" rel="noopener noreferrer">Donate</a>
-        </div>
-
-        <div class="filter-panel" id="filter-panel">
-          <select id="source">
-            <option value="all">All Sources</option>
-          </select>
-          <select id="status">
-            <option value="all">All Statuses</option>
-            <option value="on-time">&#x2713; On Time</option>
-            <option value="early">&#x26A1; Early</option>
-            <option value="late">&#x23F1;&#xFE0F; Late</option>
-            <option value="delayed">&#x1F534; Delayed</option>
-          </select>
-        </div>
-
-        <div id="floating-list" class="train-list-wrap">
-          <div id="train-list" class="train-list"></div>
-        </div>
-
-      </aside>
-
-      <!-- RIGHT MAP PANE -->
-      <div class="map-pane">
-        <div id="map" class="map"></div>
-        <div id="train-tooltip" class="train-tooltip" aria-hidden="true"></div>
-
-        <div class="map-actions">
-          <!-- Toggle rail route lines -->
-          <button id="toggle-routes" class="map-btn" data-active="true" title="Toggle rail routes">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V10a8 8 0 0 1 16 0v10"/><circle cx="8" cy="20" r="2"/><circle cx="16" cy="20" r="2"/><line x1="8" y1="18" x2="16" y2="18"/></svg>
+          <button id="refresh" class="tool-btn" title="Refresh">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+              stroke-linejoin="round">
+              <polyline points="23 4 23 10 17 10" />
+              <polyline points="1 20 1 14 7 14" />
+              <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15" />
+            </svg>
           </button>
-          <!-- Toggle stations -->
-          <button id="toggle-stations" class="map-btn" data-active="true" title="Toggle stations">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="10" r="3"/><path d="M12 21.7C17.3 17 20 13 20 10a8 8 0 1 0-16 0c0 3 2.7 6.9 8 11.7z"/></svg>
+          <button id="toggle-settings" class="tool-btn" title="Settings">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+              stroke-linejoin="round">
+              <circle cx="12" cy="12" r="3" />
+              <path
+                d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06-.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06-.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
+            </svg>
           </button>
-          <!-- Freight rail overlay -->
-          <button id="toggle-freight" class="map-btn" data-active="false" title="Toggle freight rail overlay">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17h18"/><path d="M4 14h16l-1-6H5z"/><circle cx="8" cy="19" r="2"/><circle cx="16" cy="19" r="2"/></svg>
+          <button id="open-tool-help-modal" class="tool-btn" title="Tools & Marker Guide" aria-label="Open tools and marker guide">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="9"></circle>
+              <path d="M9.4 9.2a2.7 2.7 0 1 1 4.6 1.9c-.8.7-1.6 1.2-1.6 2.4"></path>
+              <circle cx="12" cy="17.3" r="0.7" fill="currentColor" stroke="none"></circle>
+            </svg>
           </button>
-          <!-- Nearest crossing finder -->
-          <button id="btn-nearest-crossing" class="map-btn" title="Find nearest rail crossing">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 19L19 5"/><path d="M5 5l14 14"/><path d="M7 3h4v4"/><path d="M13 17h4v4"/></svg>
-          </button>
-          <!-- Heritage tracker -->
-          <button id="toggle-heritage" class="map-btn map-btn-text" title="Heritage Unit Tracker">H</button>
-          <!-- Special interest tracker -->
-          <button id="toggle-special-interest" class="map-btn map-btn-text" title="Special Interest Tracker">SI</button>
-          <!-- Saved trains only -->
-          <button id="toggle-saved" class="map-btn" data-active="false" title="Saved trains only">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
-          </button>
-          <!-- Live railcams -->
-          <button id="toggle-railcams" class="map-btn" title="Live railcams">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
-          </button>
-          <!-- Departure board -->
-          <button id="toggle-departure-board" class="map-btn" title="Departure board">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/><line x1="9" y1="9" x2="9" y2="21"/></svg>
-          </button>
-          <!-- Fit to trains -->
-          <button id="btn-fit-trains" class="map-btn" title="Fit map to all trains">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg>
-          </button>
-          <!-- Locate me -->
-          <button id="btn-locate" class="map-btn" title="Find my location">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M22 12h-4M6 12H2M12 6V2M12 22v-4"/><circle cx="12" cy="12" r="8"/></svg>
-          </button>
-        </div>
-
-        <!-- Delay Queue -->
-        <div id="delay-queue" class="delay-queue">
-          <div class="dq-header">
-            <svg class="dq-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-            <span class="dq-title">Delays</span>
-            <span id="dq-count" class="dq-count">0</span>
-            <button id="dq-toggle" class="dq-toggle" title="Toggle delay panel" aria-expanded="true">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"/></svg>
-            </button>
-          </div>
-          <div id="dq-body" class="dq-body">
-            <div class="dq-empty">No delays reported</div>
-          </div>
-        </div>
-
-        <div class="status-pill" id="last-updated">Last updated: --</div>
-        <div class="contrib-pill" id="contrib-pill">
-          <span class="contrib-title">Credits</span>
-          <div id="contrib-links" class="contrib-links"></div>
         </div>
       </div>
 
-    </div><!-- /.app -->
+      <div class="floating-search active">
+        <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+          stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="11" cy="11" r="8" />
+          <line x1="21" y1="21" x2="16.65" y2="16.65" />
+        </svg>
+        <input id="search" type="text" placeholder="Search trains, routes, stations…" autocomplete="off" />
+        <button id="toggle-filters" class="filter-toggle" data-active="false" title="Filters">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+            stroke-linejoin="round">
+            <line x1="4" y1="6" x2="20" y2="6" />
+            <line x1="8" y1="12" x2="16" y2="12" />
+            <line x1="11" y1="18" x2="13" y2="18" />
+          </svg>
+        </button>
+      </div>
 
+      <div class="quick-strip" id="quick-strip">
+        <button id="quick-live" class="quick-chip" data-active="false">Live</button>
+        <button id="quick-delay" class="quick-chip" data-active="false">Delayed</button>
+        <button id="quick-reset" class="quick-chip ghost">Reset</button>
 
-    <!-- MODALS (position:fixed, cover full viewport) -->
+      </div>
 
-    <div id="detail-modal" class="detail-modal">
-      <div class="modal-content">
-        <button id="close-modal" class="close-btn">&#xD7;</button>
-        <div id="train-detail"  class="train-detail"></div>
-        <div id="station-board" class="station-board" style="display:none;"></div>
+      <div id="history-toolbar" class="history-toolbar" hidden>
+        <div class="history-toolbar-head">
+          <div class="history-toolbar-copy">
+            <span class="history-toolbar-kicker">Train history</span>
+            <strong id="history-playback-label">Live</strong>
+          </div>
+          <div class="history-toolbar-actions">
+            <button id="history-playback-toggle" class="btn-secondary" type="button">Play</button>
+            <button id="history-playback-live" class="btn-secondary" type="button">Live</button>
+          </div>
+        </div>
+        <input id="history-playback-scrubber" class="history-toolbar-slider" type="range" min="0" max="1" step="1000" value="1" />
+        <p class="history-toolbar-note">Scrub back through the day, then press space to play a timelapse.</p>
+      </div>
+
+      <div id="quick-look-board" class="quick-look-board"></div>
+
+      <div class="support-strip" style="display:flex; gap:8px;">
+        <button id="btn-upload-find" class="support-action"
+          style="background:var(--accent); border:none; cursor:pointer; color:#111827;" title="Upload a find">Log Sighting</button>
+      </div>
+
+      <div class="filter-panel" id="filter-panel">
+        <select id="source">
+          <option value="all">All Sources</option>
+        </select>
+        <select id="status">
+          <option value="all">All Statuses</option>
+          <option value="on-time">&#x2713; On Time</option>
+          <option value="early">&#x26A1; Early</option>
+          <option value="late">&#x23F1;&#xFE0F; Late</option>
+          <option value="delayed">&#x1F534; Delayed</option>
+        </select>
+      </div>
+
+      <div id="floating-list" class="train-list-wrap">
+        <div class="list-header">
+          <h2>Live Trains</h2>
+          <button id="close-sidebar-train-detail" class="btn-secondary sidebar-detail-close" type="button" aria-label="Close selected train details" style="display:none;">Back</button>
+        </div>
+        <div id="train-list" class="train-list"></div>
+        <div id="sidebar-train-detail-wrap" class="sidebar-train-detail-wrap" hidden>
+          <div id="sidebar-train-detail" class="train-detail sidebar-train-detail"></div>
+        </div>
+      </div>
+
+    </aside>
+
+    <button id="toggle-list" class="drawer-toggle" title="Hide operations sidebar" aria-label="Hide operations sidebar" aria-expanded="true">
+      <span id="toggle-list-icon" class="drawer-toggle-icon">&lt;</span>
+    </button>
+
+    <aside class="account-sidebar" id="account-sidebar" aria-hidden="true">
+      <div class="account-sidebar-header">
+        <div>
+          <span class="account-sidebar-kicker">Preferences</span>
+          <h2>Settings</h2>
+        </div>
+        <button id="close-account-sidebar" class="tool-btn" title="Close account panel" aria-label="Close account panel">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="18" y1="6" x2="6" y2="18" />
+            <line x1="6" y1="6" x2="18" y2="18" />
+          </svg>
+        </button>
+      </div>
+      <div class="account-sidebar-body">
+        <div class="account-placeholder">
+          <div class="account-placeholder-icon">G</div>
+          <h3>Google account</h3>
+          <p>OpenRailTracker accounts are managed through Google sign-in so saved trains, settings, and future alerts can stay portable across devices.</p>
+          <button class="btn-primary account-google-btn" type="button" disabled>Google sign-in coming soon</button>
+          <button id="account-open-privacy" class="btn-secondary" type="button">Privacy Policy</button>
+        </div>
+      </div>
+    </aside>
+
+    <!-- RIGHT MAP PANE -->
+    <div class="map-pane">
+      <div id="map" class="map"></div>
+      <div id="train-tooltip" class="train-tooltip" aria-hidden="true"></div>
+
+      <div class="map-actions">
+        <!-- Saved trains only -->
+        <button id="toggle-saved" class="map-btn" data-active="false" title="Show saved trains only"
+          aria-label="Show saved trains only">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+            stroke-linejoin="round">
+            <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z" />
+          </svg>
+        </button>
+        <!-- Fit to trains -->
+        <button id="btn-fit-trains" class="map-btn" title="Zoom to all trains" aria-label="Zoom to all trains">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+            stroke-linejoin="round">
+            <polyline points="15 3 21 3 21 9" />
+            <polyline points="9 21 3 21 3 15" />
+            <line x1="21" y1="3" x2="14" y2="10" />
+            <line x1="3" y1="21" x2="10" y2="14" />
+          </svg>
+        </button>
+        <!-- Locate me -->
+        <button id="btn-locate" class="map-btn" title="Show or hide my location" aria-label="Show or hide my location">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+            stroke-linejoin="round">
+            <circle cx="12" cy="12" r="3" />
+            <path d="M22 12h-4M6 12H2M12 6V2M12 22v-4" />
+            <circle cx="12" cy="12" r="8" />
+          </svg>
+        </button>
+        <!-- Service notices -->
+        <button id="open-service-notices" class="map-btn" title="Open service notices" aria-label="Open service notices">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M10.3 3.5 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.5a2 2 0 0 0-3.4 0z" />
+            <path d="M12 9v5" />
+            <circle cx="12" cy="17" r="0.8" fill="currentColor" stroke="none" />
+          </svg>
+        </button>
+        <!-- Railcams -->
+        <button id="toggle-railcams" class="map-btn" title="Open railcams" aria-label="Open railcams" aria-pressed="false">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="5" width="18" height="12" rx="2" />
+            <path d="M8 21h8" />
+            <path d="M9 17v4" />
+            <path d="M15 17v4" />
+            <circle cx="12" cy="11" r="2.5" />
+          </svg>
+        </button>
+      </div>
+      <div class="sync-flash" id="last-updated" aria-hidden="true"></div>
+      <button id="map-version-pill" class="map-version-pill" type="button" title="View recent updates" aria-label="View recent updates">
+        v0.0.0
+      </button>
+      <div class="contrib-pill" id="contrib-pill">
+        <span class="contrib-title">Credits</span>
+        <div id="contrib-links" class="contrib-links"></div>
+        <a class="contrib-legal-link" href="http://www.511.org" target="_blank" rel="noopener noreferrer">Data provided
+          by 511.org</a>
       </div>
     </div>
 
-    <div id="railcam-modal" class="detail-modal">
-      <div class="modal-content railcam-content">
-        <button id="close-railcam-modal" class="close-btn">&#xD7;</button>
-        <h3>Live Railcams</h3>
-        <div class="railcam-controls">
-          <input  id="railcam-search" type="text" placeholder="Search state, city, or cam…" />
-          <select id="railcam-state"><option value="all">All states</option></select>
+    <section id="mobile-alerts-screen" class="mobile-screen" aria-label="Alerts screen">
+      <header class="mobile-screen-header">
+        <span>Operations</span>
+        <h2>Alerts</h2>
+      </header>
+      <div class="mobile-screen-body">
+        <article class="mobile-panel">
+          <span class="mobile-panel-kicker">Service Notices</span>
+          <h3>Current rail alerts</h3>
+          <p>Active service notices, maintenance messages, and service exceptions will live here as a dedicated screen.</p>
+          <button id="mobile-open-service-notices" class="mobile-action-button" type="button">Open Notices</button>
+        </article>
+        <article class="mobile-panel mobile-panel-muted">
+          <span class="mobile-panel-kicker">Status</span>
+          <h3>No alert selected</h3>
+          <p>Select an alert from this screen to see affected route, severity, and updated time.</p>
+        </article>
+      </div>
+    </section>
+
+    <section id="mobile-settings-screen" class="mobile-screen" aria-label="Settings screen">
+      <header class="mobile-screen-header">
+        <span>Preferences</span>
+        <h2>Settings</h2>
+      </header>
+      <div class="mobile-screen-body">
+        <article class="mobile-panel">
+          <span class="mobile-panel-kicker">Theme</span>
+          <h3>Appearance</h3>
+          <div class="mobile-theme-grid">
+            <button class="mobile-theme-swatch active" type="button" data-theme-choice="dark"><span></span>Dark</button>
+            <button class="mobile-theme-swatch" type="button" data-theme-choice="light"><span></span>Light</button>
+            <button class="mobile-theme-swatch" type="button" data-theme-choice="mono"><span></span>Mono</button>
+          </div>
+        </article>
+        <article class="mobile-panel">
+          <span class="mobile-panel-kicker">Tools</span>
+          <h3>Map controls</h3>
+          <button id="mobile-open-settings-modal" class="mobile-action-button" type="button">Settings</button>
+          <button id="mobile-open-tool-help" class="mobile-secondary-button" type="button">Tool Guide</button>
+        </article>
+        <article class="mobile-panel">
+          <span class="mobile-panel-kicker">Refresh</span>
+          <h3>Live data</h3>
+          <p>The live board updates from provider data and keeps the map/list in sync without mixing views.</p>
+        </article>
+      </div>
+    </section>
+
+    <nav class="bottom-nav" aria-label="Primary app navigation">
+      <button class="bottom-nav-item active" type="button" data-view="map" title="Map">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m3 6 6-2 6 2 6-2v14l-6 2-6-2-6 2z"></path><path d="M9 4v14M15 6v14"></path></svg>
+        <span>Map</span>
+      </button>
+      <button id="bottom-nav-live" class="bottom-nav-item" type="button" data-view="live" title="Live board">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 17h12"></path><path d="M8 17l-2 3M16 17l2 3"></path><rect x="5" y="3" width="14" height="14" rx="2"></rect><path d="M9 7h6M8 12h.01M16 12h.01"></path></svg>
+        <span>Live</span>
+      </button>
+      <button id="btn-upload-find-top" class="bottom-nav-item bottom-nav-primary" type="button" data-view="log" title="Log sighting">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg>
+        <span>Log</span>
+      </button>
+      <button id="bottom-nav-alerts" class="bottom-nav-item" type="button" data-view="alerts" title="Service alerts">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10.3 3.5 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.5a2 2 0 0 0-3.4 0z"></path><path d="M12 9v5"></path><path d="M12 17h.01"></path></svg>
+        <span>Alerts</span>
+      </button>
+      <button id="bottom-nav-settings" class="bottom-nav-item" type="button" data-view="settings" title="Settings">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 0 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V22a2 2 0 0 1-4 0v-.1a1.7 1.7 0 0 0-1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 0 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H2a2 2 0 0 1 0-4h.1a1.7 1.7 0 0 0 1.5-1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 0 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3h.1a1.7 1.7 0 0 0 1-1.5V2a2 2 0 0 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 0 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8v.1a1.7 1.7 0 0 0 1.5 1H22a2 2 0 0 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"></path></svg>
+        <span>Settings</span>
+      </button>
+    </nav>
+
+  </div><!-- /.app -->
+
+  <div id="railcam-window-host" class="railcam-window-host" aria-live="polite"></div>
+
+
+  <!-- MODALS (position:fixed, cover full viewport) -->
+
+  <div id="detail-modal" class="detail-modal">
+    <div class="modal-content">
+      <div class="detail-sheet-grabber" aria-hidden="true"><span></span></div>
+      <button id="close-modal" class="close-btn">&#xD7;</button>
+      <div id="train-detail" class="train-detail"></div>
+      <div id="station-board" class="station-board" style="display:none;"></div>
+    </div>
+  </div>
+
+  <div id="service-alert-modal" class="detail-modal">
+    <div class="modal-content service-alert-content">
+      <button id="close-service-alert-modal" class="close-btn" aria-label="Close service alert dialog">&#xD7;</button>
+      <div id="service-alert-panel" class="service-alert-panel"></div>
+    </div>
+  </div>
+
+  <div id="booking-modal" class="detail-modal">
+    <div class="modal-content service-alert-content booking-content">
+      <button id="close-booking-modal" class="close-btn" aria-label="Close booking dialog">&#xD7;</button>
+      <div id="booking-panel" class="service-alert-panel booking-panel"></div>
+    </div>
+  </div>
+
+  <div id="maintenance-modal" class="detail-modal">
+    <div class="modal-content service-alert-content">
+      <button id="close-maintenance-modal" class="close-btn" aria-label="Close maintenance dialog">&#xD7;</button>
+      <div id="maintenance-panel" class="service-alert-panel"></div>
+    </div>
+  </div>
+
+  <div id="service-notices-modal" class="detail-modal">
+    <div class="modal-content service-alert-content">
+      <button id="close-service-notices-modal" class="close-btn" aria-label="Close service notices dialog">&#xD7;</button>
+      <div id="service-notices-panel" class="service-alert-panel"></div>
+    </div>
+  </div>
+
+  <div id="desktop-welcome-modal" class="detail-modal">
+    <div class="modal-content desktop-welcome-content">
+      <button id="close-desktop-welcome-modal" class="close-btn" aria-label="Close welcome dialog">&#xD7;</button>
+      <div class="desktop-welcome-shell">
+        <span class="release-kicker">Desktop Welcome</span>
+        <h3>Welcome to OpenRailTracker for Desktop</h3>
+        <p>You're running the desktop edition for Intel or Apple Silicon with faster updates and a dedicated rail tracking workspace.</p>
+        <div class="desktop-welcome-grid">
+          <div>
+            <strong>Live Operations</strong>
+            <span>Keep the full map visible while scanning trains and alerts without tab switching.</span>
+          </div>
+          <div>
+            <strong>History Scrubbing</strong>
+            <span>Scrub back in time and replay movements directly on the track geometry.</span>
+          </div>
+          <div>
+            <strong>Desktop Shortcuts</strong>
+            <span>Use the sidebar, quick filters, and map controls for faster operator workflows.</span>
+          </div>
         </div>
-        <div id="railcam-list" class="railcam-list"></div>
+        <div class="desktop-welcome-actions">
+          <button id="desktop-welcome-cta" class="release-start-btn" style="border:none; cursor:pointer;">Start tracking</button>
+        </div>
       </div>
     </div>
+  </div>
 
-    <div id="settings-modal" class="detail-modal">
-      <div class="modal-content settings-content">
-        <button id="close-settings-modal" class="close-btn">&#xD7;</button>
+  <div id="release-modal" class="detail-modal">
+    <div class="modal-content release-content">
+      <button id="close-release-modal" class="close-btn" aria-label="Close updates dialog">&#xD7;</button>
+      <div class="release-shell">
+        <span class="release-kicker">Updates</span>
+        <h3 id="release-title">OpenRailTracker</h3>
+        <p id="release-updated-at">Updated --</p>
+        <div id="release-spotlight" class="release-spotlight" aria-live="polite"></div>
+        <div id="release-change-log" class="release-notes-log">
+          <div>
+            <span>Loading</span>
+            <strong>Preparing patch notes…</strong>
+          </div>
+        </div>
+        <div class="release-donate-actions">
+          <button id="release-got-it" class="release-start-btn" style="border:none; cursor:pointer;">Got it</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="tool-help-modal" class="detail-modal">
+    <div class="modal-content tool-help-content">
+      <button id="close-tool-help-modal" class="close-btn" aria-label="Close tools and marker guide">&#xD7;</button>
+      <div class="tool-help-shell">
+        <span class="release-kicker">Quick Guide</span>
+        <h3>Complete App Guide</h3>
+        <p>This guide explains the active controls and workflows across the app. It is intentionally detailed for first-time and power users.</p>
+
+        <section class="tool-help-block">
+          <h4>Top Toolbar & Map Buttons</h4>
+          <div class="tool-help-grid">
+            <div><strong>Search</strong><span>Filters trains/routes/stations by text. Use this first when tracking a known train number or route name.</span></div>
+            <div><strong>Refresh</strong><span>Runs a manual data sync outside normal polling. Use when arrivals/status look stale.</span></div>
+            <div><strong>Settings</strong><span>Controls refresh, visible layers, themes, and display preferences.</span></div>
+            <div><strong>Tool Help (?)</strong><span>Opens this documentation modal.</span></div>
+            <div><strong>Saved Trains</strong><span>Shows only trains you saved/bookmarked.</span></div>
+            <div><strong>Fit Trains</strong><span>Zooms/pans map to include active visible trains.</span></div>
+            <div><strong>Locate</strong><span>Toggles your location marker on the map (device permission required).</span></div>
+          </div>
+        </section>
+
+        <section class="tool-help-block">
+          <h4>Main Action Buttons</h4>
+          <div class="tool-help-grid">
+            <div><strong>Log</strong><span>Opens the sighting flow with photo/video plus metadata.</span></div>
+            <div><strong>Live</strong><span>Opens the live train board and focuses search.</span></div>
+            <div><strong>Alerts</strong><span>Opens service notices and operational updates.</span></div>
+            <div><strong>Quick Chips (Live/Delayed/Reset)</strong><span>Fast filter presets for train list + map focus.</span></div>
+          </div>
+        </section>
+
+        <section class="tool-help-block">
+          <h4>Marker Legend</h4>
+          <div class="marker-legend-grid">
+            <div class="marker-legend-item">
+              <span class="marker-legend-pill marker-legend-pill--line">R12</span>
+              <div><strong>Commuter line marker</strong><span>Line-colored badge with train code.</span></div>
+            </div>
+            <div class="marker-legend-item">
+              <span class="marker-legend-pill marker-legend-pill--delay">A48</span>
+              <div><strong>Intercity/status marker</strong><span>Status/delay color drives marker tone.</span></div>
+            </div>
+            <div class="marker-legend-item">
+              <span class="marker-legend-dot marker-legend-dot--alert"></span>
+              <div><strong>Alert dot</strong><span>Service issue/exception attached to the train.</span></div>
+            </div>
+            <div class="marker-legend-item">
+              <span class="marker-legend-pill marker-legend-pill--cam">LIVE</span>
+              <div><strong>Railcam marker</strong><span>Temporarily disabled with railcam module in this release.</span></div>
+            </div>
+          </div>
+        </section>
+
+        <section class="tool-help-block">
+          <h4>Intercity Marker Colors</h4>
+          <div class="marker-legend-grid">
+            <div class="marker-legend-item">
+              <span class="marker-legend-pill marker-legend-pill--green">ON</span>
+              <div><strong>Green</strong><span>On time / early movement profile.</span></div>
+            </div>
+            <div class="marker-legend-item">
+              <span class="marker-legend-pill marker-legend-pill--yellow">+5</span>
+              <div><strong>Yellow</strong><span>Minor delay.</span></div>
+            </div>
+            <div class="marker-legend-item">
+              <span class="marker-legend-pill marker-legend-pill--orange">+20</span>
+              <div><strong>Orange</strong><span>Moderate delay.</span></div>
+            </div>
+            <div class="marker-legend-item">
+              <span class="marker-legend-pill marker-legend-pill--red">+45</span>
+              <div><strong>Red</strong><span>Major delay / service issue likely.</span></div>
+            </div>
+            <div class="marker-legend-item">
+              <span class="marker-legend-pill marker-legend-pill--gray">OOS</span>
+              <div><strong>Gray</strong><span>Out-of-service / severe status.</span></div>
+            </div>
+          </div>
+        </section>
+
+        <section class="tool-help-block">
+          <h4>Train List & Detail Workflow</h4>
+          <div class="tool-help-grid">
+            <div><strong>List Cards</strong><span>Show route, status, delay, next stop, and direction summary.</span></div>
+            <div><strong>Detail Panel</strong><span>Opens train information with service alerts, fares (where available), and upcoming stops. On mobile this starts as a small bottom sheet you can swipe up.</span></div>
+            <div><strong>Track</strong><span>When movement mode is active (currently disabled), keeps selected train centered.</span></div>
+            <div><strong>Departure Board</strong><span>Aggregates upcoming stop-level arrivals for selected source filters.</span></div>
+          </div>
+        </section>
+
+        <section class="tool-help-block">
+          <h4>Settings Explained</h4>
+          <div class="tool-help-grid">
+            <div><strong>Refresh Interval</strong><span>How often the app requests fresh backend data.</span></div>
+            <div><strong>Train movement mode</strong><span>Temporarily disabled in this release due to rendering stability issues.</span></div>
+            <div><strong>Routes/Stations/Signals toggles</strong><span>Turns map layers on/off to balance visibility and performance.</span></div>
+            <div><strong>Bottom Navigation</strong><span>Map, Live, Log, Alerts, and Profile stay available without leaving the primary map.</span></div>
+            <div><strong>Theme + Time Zone</strong><span>Visual style and timestamp formatting preferences.</span></div>
+            <div><strong>Heritage/Special Interest/Maintenance</strong><span>Controls optional overlays and incident context layers.</span></div>
+          </div>
+        </section>
+
+        <section class="tool-help-block tool-help-block--important">
+          <h4>Current Release Status</h4>
+          <ul>
+            <li><strong>Train movement mode</strong> is temporarily disabled to prevent jitter and disappearing map tiles/routes.</li>
+            <li><strong>Live position rendering</strong> currently follows provider updates only for maximum stability.</li>
+            <li><strong>Deferred tools</strong> are removed from the active UX while they are rebuilt.</li>
+          </ul>
+        </section>
+      </div>
+    </div>
+  </div>
+
+  <div id="settings-modal" class="detail-modal">
+    <div class="modal-content settings-content">
+      <button id="close-settings-modal" class="close-btn">&#xD7;</button>
+      <div class="settings-hero">
+        <span class="settings-hero-kicker">Preferences</span>
         <h3>Settings</h3>
-        <div class="settings-grid">
-          <label class="settings-row" for="setting-refresh-interval">
-            <span class="settings-title">Auto-refresh</span>
-            <select id="setting-refresh-interval">
-              <option value="10">Every 10 s</option>
-              <option value="20">Every 20 s</option>
-              <option value="30">Every 30 s</option>
-              <option value="60">Every 60 s</option>
-            </select>
-          </label>
-          <label class="settings-row" for="setting-map-style">
-            <span class="settings-title">Map style</span>
-            <select id="setting-map-style">
-              <option value="dark">Dark</option>
-              <option value="light">Light</option>
-              <option value="satellite">Satellite</option>
-              <option value="topo">Topographic</option>
-            </select>
-          </label>
-          <label class="settings-row" for="setting-theme-mode">
-            <span class="settings-title">Theme</span>
-            <select id="setting-theme-mode">
-              <option value="dark">Dark</option>
-              <option value="light">Light</option>
-            </select>
-          </label>
-          <label class="settings-row toggle" for="setting-freight-lines">
-            <span class="settings-title">Freight rail overlay</span>
-            <input id="setting-freight-lines" type="checkbox" />
-          </label>
-          <label class="settings-row toggle" for="setting-search-open-default">
-            <span class="settings-title">Keep search visible</span>
-            <input id="setting-search-open-default" type="checkbox" />
-          </label>
-          <label class="settings-row toggle" for="setting-compact-cards">
-            <span class="settings-title">Compact train cards</span>
-            <input id="setting-compact-cards" type="checkbox" />
-          </label>
-        </div>
-        <div class="settings-actions">
-          <button id="save-settings" class="btn-primary">Save settings</button>
-        </div>
+        <p>Choose how OpenRailTracker looks, refreshes, and draws the map.</p>
       </div>
-    </div>
-
-    <div id="departure-board-modal" class="detail-modal">
-      <div class="modal-content departure-board-content">
-        <button id="close-departure-board-modal" class="close-btn">&#xD7;</button>
-        <h3>Departure Board</h3>
-        <div class="board-filters">
-          <select id="departure-board-source">
-            <option value="all">All Railroads</option>
+      <div class="settings-grid">
+        <div class="settings-section-label">General</div>
+        <label class="settings-row" id="setting-interval-row" for="setting-refresh-interval">
+          <span class="settings-title">Refresh interval</span>
+          <select id="setting-refresh-interval">
+            <option value="180">Every 3 minutes</option>
           </select>
-        </div>
-        <div class="departure-board-grid departure-board-header">
-          <span>Time</span><span>Train</span><span>Railroad</span>
-          <span>Destination</span><span>Status</span><span>Track</span>
-        </div>
-        <div id="departure-board-rows"></div>
+        </label>
+
+        <label class="settings-row" for="setting-time-zone">
+          <span class="settings-title">Time zone</span>
+          <select id="setting-time-zone">
+            <option value="browser">Device local</option>
+          </select>
+        </label>
+        <input id="setting-tracking-mode" type="hidden" value="standard" />
+        <label class="settings-row" for="setting-theme-mode">
+          <span class="settings-title">Theme</span>
+          <select id="setting-theme-mode">
+            <option value="dark">Dark</option>
+            <option value="light">Light</option>
+            <option value="deep-black">Deep Black</option>
+            <option value="obsidian-indigo">Obsidian Indigo</option>
+            <option value="graphite-noir">Graphite Noir</option>
+            <option value="deep-ocean">Deep Ocean</option>
+            <option value="midnight-plum">Midnight Plum</option>
+            <option value="emerald-night">Emerald Night</option>
+            <option value="mono-graphite">Mono Graphite</option>
+            <option value="mono-ash">Mono Ash</option>
+            <option value="mono-paper">Mono Paper</option>
+            <option value="contrast-dark">High Contrast Dark</option>
+            <option value="contrast-light">High Contrast Light</option>
+            <option value="clean-slate">Clean Slate</option>
+            <option value="clean-glacier">Clean Glacier</option>
+            <option value="pastel-mint">Pastel Mint</option>
+            <option value="pastel-lilac">Pastel Lilac</option>
+            <option value="pastel-peach">Pastel Peach</option>
+          </select>
+        </label>
+        <div class="settings-section-label">Live Systems</div>
+        <label class="settings-row toggle" for="setting-predicted-movement">
+          <span class="settings-title">Precision train movement</span>
+          <input id="setting-predicted-movement" type="checkbox" />
+        </label>
+        <label class="settings-row toggle" for="setting-freight-visible">
+          <span class="settings-title">Freight infrastructure</span>
+          <input id="setting-freight-visible" type="checkbox" />
+        </label>
+        <label class="settings-row" for="setting-freight-operator-highlight">
+          <span class="settings-title">Freight map style</span>
+          <select id="setting-freight-operator-highlight">
+            <option value="standard">Infrastructure</option>
+            <option value="speed">Speed</option>
+            <option value="electrification">Electrification</option>
+            <option value="track">Track</option>
+            <option value="operator">Operator</option>
+          </select>
+        </label>
+        <label class="settings-row toggle" for="setting-railcams-visible">
+          <span class="settings-title">Public railcams</span>
+          <input id="setting-railcams-visible" type="checkbox" />
+        </label>
+        <label class="settings-row toggle" for="setting-railcam-vision-enabled" hidden>
+          <span class="settings-title">Railcam train vision</span>
+          <input id="setting-railcam-vision-enabled" type="checkbox" />
+        </label>
+        <div class="settings-section-label">Map Layers</div>
+        <label class="settings-row toggle" for="setting-routes-visible">
+          <span class="settings-title">Passenger route lines on map</span>
+          <input id="setting-routes-visible" type="checkbox" />
+        </label>
+        <label class="settings-row toggle" for="setting-proposed-lines-visible">
+          <span class="settings-title">Proposed rail lines</span>
+          <input id="setting-proposed-lines-visible" type="checkbox" />
+        </label>
+        <label class="settings-row toggle" for="setting-stations-visible">
+          <span class="settings-title">Stations on map</span>
+          <input id="setting-stations-visible" type="checkbox" />
+        </label>
+        <label class="settings-row toggle" for="setting-maintenance-visible">
+          <span class="settings-title">Live maintenance alerts</span>
+          <input id="setting-maintenance-visible" type="checkbox" />
+        </label>
+
+        <div class="settings-section-label">Sightings</div>
+        <label class="settings-row toggle" for="setting-heritage-visible">
+          <span class="settings-title">Heritage sightings</span>
+          <input id="setting-heritage-visible" type="checkbox" />
+        </label>
+        <label class="settings-row toggle" for="setting-special-interest-visible">
+          <span class="settings-title">Special interest sightings</span>
+          <input id="setting-special-interest-visible" type="checkbox" />
+        </label>
+
+        <div class="settings-section-label">History</div>
+        <input id="setting-speed-limits-visible" type="checkbox" hidden />
+        <label class="settings-row toggle" for="setting-speed-dots-visible">
+          <span class="settings-title">Speed dots every 10 miles</span>
+          <input id="setting-speed-dots-visible" type="checkbox" />
+        </label>
+        <label class="settings-row toggle" for="setting-train-history-visible">
+          <span class="settings-title">Train history mode</span>
+          <input id="setting-train-history-visible" type="checkbox" />
+        </label>
+
+        <div class="settings-section-label">Layout</div>
+        <label class="settings-row toggle" for="setting-search-open-default">
+          <span class="settings-title">Keep search visible</span>
+          <input id="setting-search-open-default" type="checkbox" />
+        </label>
+        <input id="setting-compact-cards" type="checkbox" hidden />
+        <input id="setting-simple-info" type="checkbox" hidden />
+      </div>
+      <div class="settings-actions">
+        <button id="open-about-modal" class="btn-secondary">About</button>
+        <button id="open-privacy-modal" class="btn-secondary">Privacy</button>
+        <button id="open-credits-modal" class="btn-secondary">Credits</button>
+        <button id="save-settings" class="btn-primary" hidden>Save settings</button>
       </div>
     </div>
+  </div>
 
-    <!-- Delay Detail Modal -->
-    <div id="dq-detail-modal" class="detail-modal dq-detail-modal">
-      <div class="modal-content dq-detail-content">
-        <button id="close-dq-detail-modal" class="close-btn">&#xD7;</button>
-        <div id="dq-detail-body"></div>
+  <div id="about-modal" class="detail-modal">
+    <div class="modal-content app-info-content">
+      <div class="app-info-topbar">
+        <button id="close-about-modal" class="app-info-back" type="button" aria-label="Back to main screen">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 18l-6-6 6-6" /></svg>
+          Back
+        </button>
+      </div>
+      <div class="app-info-scroll">
+        <div class="app-info-hero">
+          <span class="settings-hero-kicker">About</span>
+          <h3>OpenRailTracker</h3>
+          <p>Live rail tracking for passenger, commuter, freight, railcam, and service-condition context across North America.</p>
+        </div>
+        <div class="app-info-grid">
+          <article class="app-info-card">
+            <span>Mission</span>
+            <h4>Make rail status readable.</h4>
+            <p>The app combines live vehicle feeds, route geometry, station context, train history, speed points, and alerts into one map-first workspace.</p>
+          </article>
+          <article class="app-info-card">
+            <span>Data Quality</span>
+            <h4>Operator feeds vary.</h4>
+            <p>Some agencies publish rich real-time arrivals and alerts; others only publish location snapshots. ORT shows what is available and avoids inventing schedules.</p>
+          </article>
+          <article class="app-info-card">
+            <span>Accounts</span>
+            <h4>Google sign-in only.</h4>
+            <p>Account identity will be handled through Google authentication. ORT will not ship a separate password system.</p>
+          </article>
+        </div>
+        <div class="app-info-faq">
+          <h4>FAQ</h4>
+          <details open>
+            <summary>Why does a train sometimes jump?</summary>
+            <p>Rail operators send updates at different intervals. Precision movement smooths known positions while the live marker still respects the latest source update.</p>
+          </details>
+          <details>
+            <summary>Why do some railcams open differently?</summary>
+            <p>Public camera hosts use different players. ORT opens playable sources in-app and keeps the source page available when a host blocks direct embedding.</p>
+          </details>
+          <details>
+            <summary>Are alerts attached to every train?</summary>
+            <p>No. Alerts should be train-specific when the source names a route or train number, and broader service notices stay in the dedicated alerts surface.</p>
+          </details>
+          <details>
+            <summary>Can I use ORT as an official travel source?</summary>
+            <p>No. Confirm boarding, fares, and operational decisions with the rail operator. ORT is a tracking and awareness tool.</p>
+          </details>
+        </div>
       </div>
     </div>
+  </div>
 
-    <div id="sighting-modal" class="detail-modal">
-      <div class="modal-content sighting-content">
-        <button id="close-sighting-modal" class="close-btn">&#xD7;</button>
-        <h3 id="sighting-modal-title">Upload Heritage Unit</h3>
-        <form id="sighting-form" class="sighting-form">
-          <input id="sighting-type" type="hidden" value="heritage" />
-          <label class="settings-row" for="sighting-uploader-name">
-            <span class="settings-title">Uploader name</span>
-            <input id="sighting-uploader-name" type="text" placeholder="Your name or handle" required />
-          </label>
-          <label class="settings-row" for="sighting-state">
-            <span class="settings-title">State</span>
-            <select id="sighting-state" required>
-              <option value="">Select a state</option>
-            </select>
-          </label>
-          <label class="settings-row" for="sighting-city">
-            <span class="settings-title">City</span>
-            <select id="sighting-city" required disabled>
-              <option value="">Select a state first</option>
-            </select>
-          </label>
-          <label class="settings-row" for="sighting-train">
-            <span class="settings-title">What train was it?</span>
-            <input id="sighting-train" type="text" placeholder="Train number/name" required />
-          </label>
-          <label class="settings-row" for="sighting-railroad">
-            <span class="settings-title">Railroad</span>
-            <input id="sighting-railroad" type="text" placeholder="Amtrak, UP, BNSF, etc." />
-          </label>
-          <label class="settings-row" for="sighting-location">
-            <span class="settings-title">Location (optional)</span>
-            <input id="sighting-location" type="text" placeholder="City, station, crossing" />
-          </label>
-          <label class="settings-row" for="sighting-notes">
-            <span class="settings-title">Notes</span>
-            <textarea id="sighting-notes" placeholder="Anything special about this consist?" rows="3"></textarea>
-          </label>
-          <label class="settings-row" for="sighting-media">
-            <span class="settings-title">Photo or video</span>
-            <input id="sighting-media" type="file" accept="image/*,video/*" required />
-          </label>
-          <div class="settings-actions">
-            <button id="sighting-use-location" type="button" class="btn-secondary">Use my location</button>
-            <button type="submit" class="btn-primary">Upload</button>
+  <div id="privacy-modal" class="detail-modal">
+    <div class="modal-content app-info-content">
+      <div class="app-info-topbar">
+        <button id="close-privacy-modal" class="app-info-back" type="button" aria-label="Back to main screen">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 18l-6-6 6-6" /></svg>
+          Back
+        </button>
+      </div>
+      <div class="app-info-scroll">
+        <div class="app-info-hero">
+          <span class="settings-hero-kicker">Privacy</span>
+          <h3>Privacy Policy</h3>
+          <p>OpenRailTracker is designed around public rail data, local preferences, and explicit user controls.</p>
+        </div>
+        <div class="privacy-policy">
+          <section class="privacy-section">
+            <h4>Overview</h4>
+            <p>OpenRailTracker provides rail tracking, alerts, and railcam context using public transportation data. This policy explains how data is handled in the desktop and web experiences.</p>
+          </section>
+          <section class="privacy-section">
+            <h4>Information We Collect</h4>
+            <ul>
+              <li><strong>Device location (optional):</strong> Only if you enable the location toggle to show your position on the map.</li>
+              <li><strong>Local preferences:</strong> Theme, layers, refresh interval, and history toggles saved in local storage on your device.</li>
+              <li><strong>Usage signals:</strong> Basic diagnostic logs to keep the app stable (no personal identifiers attached).</li>
+            </ul>
+          </section>
+          <section class="privacy-section">
+            <h4>How We Use Data</h4>
+            <ul>
+              <li>Render live trains, routes, and station information on the map.</li>
+              <li>Remember your settings for a consistent experience.</li>
+              <li>Improve stability and performance.</li>
+            </ul>
+          </section>
+          <section class="privacy-section">
+            <h4>Sharing & Third Parties</h4>
+            <p>OpenRailTracker does not sell personal data. Railcam playback may load third-party video providers; their privacy policies apply to their players.</p>
+          </section>
+          <section class="privacy-section">
+            <h4>Data Retention</h4>
+            <p>Local preferences remain on your device until you clear browser or app storage. Location is not stored unless you explicitly save it as part of a sighting submission.</p>
+          </section>
+          <section class="privacy-section">
+            <h4>Your Choices</h4>
+            <ul>
+              <li>Disable location at any time from system settings or the in-app toggle.</li>
+              <li>Clear stored preferences by clearing local storage or reinstalling the desktop app.</li>
+            </ul>
+          </section>
+          <section class="privacy-section">
+            <h4>Contact</h4>
+            <p>Questions about privacy can be sent to the OpenRailTracker support inbox.</p>
+          </section>
+        </div>
+        <p class="app-info-note">Last updated: May 25, 2026. This policy is a baseline for the current build and should be reviewed before public App Store submission.</p>
+      </div>
+    </div>
+  </div>
+
+  <div id="credits-modal" class="detail-modal">
+    <div class="modal-content credits-content">
+      <button id="close-credits-modal" class="close-btn" aria-label="Close credits">&#xD7;</button>
+      <div class="credits-header">
+        <h3>Credits & Licenses</h3>
+        <p class="credits-note">Current live operator and platform data sources used by the map.</p>
+      </div>
+      <div class="credits-scroll">
+        <div id="credits-list" class="credits-list"></div>
+      </div>
+    </div>
+  </div>
+
+
+  <div id="cluster-modal" class="detail-modal">
+    <div class="modal-content cluster-content">
+      <button id="close-cluster-modal" class="close-btn">&#xD7;</button>
+      <h3>Regional Cluster</h3>
+      <div class="cluster-tabs">
+        <button id="cluster-tab-trains" class="cluster-tab active">Trains (0)</button>
+        <button id="cluster-tab-stations" class="cluster-tab">Stations (0)</button>
+      </div>
+      <div id="cluster-pane-trains" class="cluster-pane active"></div>
+      <div id="cluster-pane-stations" class="cluster-pane"></div>
+    </div>
+  </div>
+
+  <div id="departure-board-modal" class="detail-modal">
+    <div class="modal-content departure-board-content">
+      <button id="close-departure-board-modal" class="close-btn">&#xD7;</button>
+      <h3>Schedules Board</h3>
+      <div class="board-filters">
+        <select id="departure-board-source">
+          <option value="all">All Railroads</option>
+        </select>
+      </div>
+      <div class="departure-board-grid departure-board-header">
+        <span>Time</span><span>Train</span><span>Railroad</span>
+        <span>Type</span>
+        <span>Destination</span><span>Status</span><span>Track</span>
+      </div>
+      <div id="departure-board-rows"></div>
+    </div>
+  </div>
+
+  <div id="railcam-modal" class="detail-modal">
+    <div class="modal-content railcam-content">
+      <button id="close-railcam-modal" class="close-btn" aria-label="Close railcam dialog">&#xD7;</button>
+      <div class="railcam-shell">
+        <section class="railcam-stage">
+          <div class="railcam-stage-head">
+            <div>
+              <span class="railcam-stage-kicker">Live railcams</span>
+              <h3 id="railcam-now-playing">Live Railcams</h3>
+            </div>
           </div>
-          <p id="sighting-status" class="sighting-status"></p>
-        </form>
+          <div id="railcam-player"></div>
+          <div id="railcam-meta" class="railcam-meta"></div>
+        </section>
+        <aside class="railcam-browser">
+          <div class="railcam-controls">
+            <input id="railcam-search" type="text" placeholder="Search railcams" />
+            <select id="railcam-state">
+              <option value="all">All states</option>
+            </select>
+          </div>
+          <div id="railcam-list" class="railcam-list"></div>
+        </aside>
       </div>
     </div>
+  </div>
 
-    <script src="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.js"></script>
-    <script src="app.js"></script>
-  </body>
+  <div id="gallery-modal" class="detail-modal">
+    <div class="modal-content gallery-content">
+      <button id="close-gallery-modal" class="close-btn" aria-label="Close gallery">&#xD7;</button>
+      <button id="back-gallery" class="btn-secondary gallery-back" type="button">Back to map</button>
+      <div class="gallery-shell">
+        <section class="gallery-main">
+          <div class="gallery-head">
+            <span class="settings-hero-kicker">Community</span>
+            <h3>Railfan Gallery</h3>
+            <p>Upload railroad photos with your name, a short description, and where the photo was taken.</p>
+          </div>
+          <div id="gallery-grid" class="gallery-grid">
+            <p class="empty-state">Loading gallery...</p>
+          </div>
+        </section>
+        <aside class="gallery-upload-panel">
+          <h4>Upload photo</h4>
+          <form id="gallery-upload-form" class="gallery-upload-form">
+            <label class="settings-row" for="gallery-uploader-name">
+              <span class="settings-title">Name</span>
+              <input id="gallery-uploader-name" type="text" maxlength="80" placeholder="Your name or handle" required />
+            </label>
+            <label class="settings-row" for="gallery-location">
+              <span class="settings-title">Location</span>
+              <input id="gallery-location" type="text" maxlength="120" placeholder="City, station, or crossing" required />
+            </label>
+            <label class="settings-row" for="gallery-description">
+              <span class="settings-title">Description</span>
+              <textarea id="gallery-description" maxlength="250" rows="4" placeholder="What are we looking at?" required></textarea>
+              <span id="gallery-description-count" class="gallery-counter">0 / 250</span>
+            </label>
+            <label class="settings-row" for="gallery-photo">
+              <span class="settings-title">Photo</span>
+              <input id="gallery-photo" type="file" accept="image/*" required />
+            </label>
+            <button class="btn-primary" type="submit">Upload photo</button>
+            <p id="gallery-upload-status" class="sighting-status"></p>
+          </form>
+        </aside>
+      </div>
+    </div>
+  </div>
+
+  <div id="download-modal" class="detail-modal">
+    <div class="modal-content download-content">
+      <button id="close-download-modal" class="close-btn" aria-label="Close download dialog">&#xD7;</button>
+      <div class="download-shell">
+        <div class="download-head">
+          <span class="settings-hero-kicker">Desktop App</span>
+          <h3>Download OpenRailTracker</h3>
+          <p>Choose your platform to download the latest desktop build.</p>
+        </div>
+        <div class="download-options">
+          <button id="download-macos-intel" class="btn-primary download-btn" type="button">macOS Intel</button>
+          <button id="download-macos-silicon" class="btn-primary download-btn" type="button">macOS Apple Silicon</button>
+          <button id="download-windows" class="btn-primary download-btn" type="button">Windows</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="sighting-modal" class="detail-modal">
+    <div class="modal-content sighting-content">
+      <button id="close-sighting-modal" class="close-btn">&#xD7;</button>
+      <h3 id="sighting-modal-title">Upload Sighting</h3>
+      <form id="sighting-form" class="sighting-form">
+        <label id="sighting-type-row" class="settings-row" for="sighting-type-radio">
+          <span class="settings-title">Unit Type</span>
+          <div style="display:flex; gap:12px; font-size:14px; align-items:center;">
+            <label style="cursor:pointer;"><input type="radio" name="sightingTypeRadio" value="heritage" checked />
+              Heritage</label>
+            <label style="cursor:pointer;"><input type="radio" name="sightingTypeRadio" value="special-interest" />
+              Special Interest</label>
+            <label style="cursor:pointer;"><input type="radio" name="sightingTypeRadio" value="defect-detector" />
+              Defect Detector</label>
+          </div>
+        </label>
+        <label class="settings-row" for="sighting-uploader-name">
+          <span class="settings-title">Uploader name</span>
+          <input id="sighting-uploader-name" type="text" placeholder="Your name or handle" required />
+        </label>
+        <label class="settings-row" for="sighting-state">
+          <span class="settings-title">State</span>
+          <select id="sighting-state" required>
+            <option value="">Select a state</option>
+          </select>
+        </label>
+        <label class="settings-row" for="sighting-city">
+          <span class="settings-title">City</span>
+          <select id="sighting-city" required disabled>
+            <option value="">Select a state first</option>
+          </select>
+        </label>
+        <label class="settings-row" for="sighting-train">
+          <span class="settings-title">Train number</span>
+          <input id="sighting-train" type="text" placeholder="Ex: 401, 8, M302" required />
+        </label>
+        <label class="settings-row" for="sighting-railroad">
+          <span class="settings-title">Railroad</span>
+          <input id="sighting-railroad" type="text" placeholder="Amtrak, UP, BNSF, etc." />
+        </label>
+        <label class="settings-row freight-only-field" for="sighting-direction" style="display:none;">
+          <span class="settings-title">Direction</span>
+          <select id="sighting-direction">
+            <option value="">Unknown</option>
+            <option value="N">Northbound</option>
+            <option value="S">Southbound</option>
+            <option value="E">Eastbound</option>
+            <option value="W">Westbound</option>
+          </select>
+        </label>
+        <label class="settings-row freight-only-field" for="sighting-estimated-speed" style="display:none;">
+          <span class="settings-title">Estimated speed (mph)</span>
+          <input id="sighting-estimated-speed" type="number" min="0" max="120" step="1" placeholder="ex: 35" />
+        </label>
+        <label class="settings-row freight-only-field" for="sighting-model" style="display:none;">
+          <span class="settings-title">Locomotive model (optional)</span>
+          <input id="sighting-model" type="text" placeholder="ex: ES44AC" />
+        </label>
+        <label class="settings-row" for="sighting-location">
+          <span class="settings-title">Location (optional)</span>
+          <input id="sighting-location" type="text" placeholder="City or station name" />
+        </label>
+        <label class="settings-row" for="sighting-notes">
+          <span class="settings-title">Notes</span>
+          <textarea id="sighting-notes" placeholder="Anything special about this consist?" rows="3"></textarea>
+        </label>
+        <label class="settings-row" for="sighting-media">
+          <span class="settings-title">Photo or video</span>
+          <input id="sighting-media" type="file" accept="image/*,video/*" capture="environment" required />
+        </label>
+        <div class="settings-actions">
+          <button id="sighting-use-location" type="button" class="btn-secondary">Use my location</button>
+          <button id="sighting-take-photo" type="button" class="btn-secondary">Take photo</button>
+          <button id="sighting-analyze-photo" type="button" class="btn-secondary">Analyze photo</button>
+          <button type="submit" class="btn-primary">Upload</button>
+        </div>
+        <p id="sighting-status" class="sighting-status"></p>
+      </form>
+    </div>
+  </div>
+
+  <div id="loco-specs-modal" class="detail-modal">
+    <div class="modal-content credits-content">
+      <button id="close-loco-specs-modal" class="close-btn" aria-label="Close locomotive specs">&#xD7;</button>
+      <h3 id="loco-specs-title">Locomotive Specs Database</h3>
+      <p class="credits-note">Model-matched specs from the in-app locomotive database.</p>
+      <div class="settings-row" style="margin-bottom:10px;">
+        <span class="settings-title">Search</span>
+        <input id="loco-specs-search" type="text" placeholder="Model, railroad, builder..." />
+      </div>
+      <div id="loco-specs-list" class="credits-list"></div>
+    </div>
+  </div>
+
+  <script src="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.js"></script>
+  <script src="welcome-screen.js"></script>
+  <script>
+    // Initialize welcome screen if it hasn't been shown
+    document.addEventListener('DOMContentLoaded', () => {
+      if (window.ORT_WelcomeScreen && window.ORT_WelcomeScreen.shouldShow()) {
+        window.ORT_WelcomeScreen.init();
+      }
+    });
+  </script>
+  <script src="app.js"></script>
+</body>
+
 </html>
