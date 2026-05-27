@@ -16934,11 +16934,24 @@ function attachEvents() {
   elements.galleryDescription?.addEventListener("input", updateGalleryDescriptionCount);
   elements.galleryUploadForm?.addEventListener("submit", submitGalleryUpload);
 
-  if (window.ORT_IS_ELECTRON && elements.openDownloadModal) {
-    elements.openDownloadModal.style.display = "none";
-  } else {
-    elements.openDownloadModal?.addEventListener("click", openDownloadModal);
+  // Hide download button in Electron - check immediately and with a small delay for safety
+  if (elements.openDownloadModal) {
+    if (typeof window.ORT_IS_ELECTRON !== "undefined" && window.ORT_IS_ELECTRON) {
+      elements.openDownloadModal.style.display = "none";
+      elements.openDownloadModal.style.visibility = "hidden";
+      elements.openDownloadModal.style.pointerEvents = "none";
+    } else {
+      elements.openDownloadModal.addEventListener("click", openDownloadModal);
+    }
   }
+  // Double-check after a short delay to ensure Electron flag is set
+  setTimeout(() => {
+    if (window.ORT_IS_ELECTRON && elements.openDownloadModal) {
+      elements.openDownloadModal.style.display = "none";
+      elements.openDownloadModal.style.visibility = "hidden";
+      elements.openDownloadModal.style.pointerEvents = "none";
+    }
+  }, 100);
   elements.closeDownloadModal?.addEventListener("click", closeDownloadModal);
   elements.downloadModal?.addEventListener("click", (event) => {
     if (event.target === elements.downloadModal) closeDownloadModal();
