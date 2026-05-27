@@ -16936,8 +16936,9 @@ function attachEvents() {
 
   if (window.ORT_IS_ELECTRON && elements.openDownloadModal) {
     elements.openDownloadModal.style.display = "none";
+  } else {
+    elements.openDownloadModal?.addEventListener("click", openDownloadModal);
   }
-  elements.openDownloadModal?.addEventListener("click", openDownloadModal);
   elements.closeDownloadModal?.addEventListener("click", closeDownloadModal);
   elements.downloadModal?.addEventListener("click", (event) => {
     if (event.target === elements.downloadModal) closeDownloadModal();
