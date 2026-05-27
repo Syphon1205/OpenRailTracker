@@ -2710,8 +2710,7 @@ const elements = {
   settingProposedLinesVisible: document.getElementById("setting-proposed-lines-visible"),
   settingFreightVisible: document.getElementById("setting-freight-visible"),
   settingRailcamsVisible: document.getElementById("setting-railcams-visible"),
-  settingRailcamVisionEnabled: document.getElementById("setting-railcam-vision-enabled"),
-  settingSignalsVisible: document.getElementById("setting-signals-visible"),
+
   settingFreightOperatorHighlight: document.getElementById("setting-freight-operator-highlight"),
   settingStationsVisible: document.getElementById("setting-stations-visible"),
   settingHeritageVisible: document.getElementById("setting-heritage-visible"),
@@ -4386,14 +4385,9 @@ function applyUiSettingsToDom() {
     elements.settingRailcamsVisible.checked = FEATURE_RAILCAMS_ENABLED && Boolean(state.uiSettings.railcamsVisible);
     elements.settingRailcamsVisible.disabled = !FEATURE_RAILCAMS_ENABLED;
   }
-  if (elements.settingRailcamVisionEnabled) {
-    const visionAvailable = FEATURE_RAILCAMS_ENABLED && FEATURE_RAILCAM_VISION_ENABLED;
-    elements.settingRailcamVisionEnabled.checked = visionAvailable && Boolean(state.uiSettings.railcamVisionEnabled);
-    elements.settingRailcamVisionEnabled.disabled = !visionAvailable;
-    elements.settingRailcamVisionEnabled.closest(".settings-row")?.toggleAttribute("hidden", !visionAvailable);
-  }
-  if (elements.settingSignalsVisible) {
-    elements.settingSignalsVisible.checked = Boolean(state.uiSettings.signalVisible);
+  if (elements.settingRailcamsVisible) {
+    elements.settingRailcamsVisible.checked = FEATURE_RAILCAMS_ENABLED && Boolean(state.uiSettings.railcamsVisible);
+    elements.settingRailcamsVisible.disabled = !FEATURE_RAILCAMS_ENABLED;
   }
   if (elements.settingFreightOperatorHighlight) {
     elements.settingFreightOperatorHighlight.value = state.uiSettings.openRailwayMapStyle || defaultUiSettings.openRailwayMapStyle;
@@ -13510,9 +13504,6 @@ function upsertSignal(signal) {
 function setSignalVisible(visible) {
   state.signalVisible = Boolean(visible);
   state.uiSettings.signalVisible = state.signalVisible;
-  if (elements.settingSignalsVisible) {
-    elements.settingSignalsVisible.checked = state.signalVisible;
-  }
   applySignalVisibility();
   applyOpenRailwayMapVisibility();
   if (state.signalVisible) {
@@ -16997,8 +16988,6 @@ function attachEvents() {
       ? `${elements.settingFreightOperatorHighlight.value}`.trim()
       : defaultUiSettings.openRailwayMapStyle;
     state.uiSettings.railcamsVisible = FEATURE_RAILCAMS_ENABLED && Boolean(elements.settingRailcamsVisible?.checked);
-    state.uiSettings.railcamVisionEnabled = FEATURE_RAILCAMS_ENABLED && FEATURE_RAILCAM_VISION_ENABLED && Boolean(elements.settingRailcamVisionEnabled?.checked);
-    state.uiSettings.signalVisible = Boolean(elements.settingSignalsVisible?.checked);
     state.uiSettings.freightOperatorHighlight = "all";
     state.uiSettings.stationsVisible = Boolean(elements.settingStationsVisible?.checked);
     state.uiSettings.heritageVisible = Boolean(elements.settingHeritageVisible?.checked);
@@ -17114,9 +17103,7 @@ function attachEvents() {
     elements.settingFreightVisible,
     elements.settingFreightOperatorHighlight,
     elements.settingRailcamsVisible,
-    elements.settingRailcamVisionEnabled,
     elements.settingStationsVisible,
-    elements.settingSignalsVisible,
     elements.settingMaintenanceVisible,
     elements.settingHeritageVisible,
     elements.settingSpecialInterestVisible,
