@@ -22,13 +22,16 @@ app.set("trust proxy", 1);
 const PORT = process.env.PORT || 3000;
 const UPLOADS_ROOT = path.join(ROOT, "uploads");
 const SIGHTINGS_UPLOAD_DIR = path.join(UPLOADS_ROOT, "sightings");
+const GALLERY_UPLOAD_DIR = path.join(UPLOADS_ROOT, "gallery");
 const SIGHTINGS_FILE = path.join(ROOT, "data", "sightings.json");
+const GALLERY_FILE = path.join(ROOT, "data", "gallery.json");
 
 app.use(cors());
 app.use(express.json());
 app.use(express.static(path.join(ROOT, "frontend")));
 app.use("/logos", express.static(path.join(ROOT, "logos")));
 app.use("/uploads", express.static(UPLOADS_ROOT));
+app.use("/downloads", express.static(path.join(ROOT, "dist")));
 
 const sightingsUpload = multer({
   storage: multer.diskStorage({
@@ -45,6 +48,26 @@ const sightingsUpload = multer({
   fileFilter: (_req, file, cb) => {
     const ok = file?.mimetype?.startsWith("image/") || file?.mimetype?.startsWith("video/");
     cb(ok ? null : new Error("Only image/video uploads are allowed"), ok);
+  },
+});
+
+const galleryUpload = multer({
+  storage: multer.diskStorage({
+    destination: (_req, _file, cb) => {
+      mkdir(GALLERY_UPLOAD_DIR, { recursive: true }).then(() => cb(null, GALLERY_UPLOAD_DIR)).catch(cb);
+    },
+    filename: (_req, file, cb) => {
+      const ext = path.extname(file.originalname || "").slice(0, 12).replace(/[^.a-zA-Z0-9]/g, "") || ".jpg";
+      const safeBase = `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+      cb(null, `${safeBase}${ext}`);
+    },
+  }),
+  limits: {
+    fileSize: 40 * 1024 * 1024,
+  },
+  fileFilter: (_req, file, cb) => {
+    const ok = file?.mimetype?.startsWith("image/");
+    cb(ok ? null : new Error("Only image uploads are allowed"), ok);
   },
 });
 
@@ -83,7 +106,37 @@ async function saveSightingsDb(sightings) {
   );
 }
 
+async function ensureGalleryStorage() {
+  await mkdir(GALLERY_UPLOAD_DIR, { recursive: true });
+  try {
+    await access(GALLERY_FILE);
+  } catch {
+    await writeFile(GALLERY_FILE, JSON.stringify({ photos: [] }, null, 2), "utf-8");
+  }
+}
+
+async function loadGalleryDb() {
+  await ensureGalleryStorage();
+  try {
+    const raw = await readFile(GALLERY_FILE, "utf-8");
+    const data = JSON.parse(raw);
+    return Array.isArray(data?.photos) ? data.photos : [];
+  } catch {
+    return [];
+  }
+}
+
+async function saveGalleryDb(photos) {
+  await ensureGalleryStorage();
+  await writeFile(
+    GALLERY_FILE,
+    JSON.stringify({ photos: Array.isArray(photos) ? photos : [] }, null, 2),
+    "utf-8"
+  );
+}
+
 await ensureSightingsStorage();
+await ensureGalleryStorage();
 
 const njtGtfsRtConfig = {
   vehiclePositionsUrl: process.env.NJT_GTFS_RT_URL || "",
@@ -518,6 +571,61 @@ function pickBestPrediction(predictions = []) {
     .sort((a, b) => a.minutes - b.minutes);
   if (ranked.length > 0) return ranked[0].prediction;
   return predictions[0] || {};
+}
+
+function buildTransitstatUpcomingStops(train, sourceKey) {
+  const predictions = Array.isArray(train?.predictions) ? train.predictions : [];
+  const rows = predictions
+    .map((prediction) => {
+      const scheduled =
+        parseTransitstatTimestamp(
+          prediction.scheduledETA ||
+            prediction.scheduledTime ||
+            prediction.scheduledArrival ||
+            prediction.scheduledDeparture ||
+            prediction.scheduled
+        ) || "";
+      const actual =
+        parseTransitstatTimestamp(
+          prediction.actualETA ||
+            prediction.actualTime ||
+            prediction.actualArrival ||
+            prediction.actualDeparture ||
+            prediction.actual ||
+            prediction.eta
+        ) || scheduled;
+      const stopId =
+        prediction.stationId ||
+        prediction.stopId ||
+        prediction.stop_id ||
+        prediction.stationCode ||
+        prediction.station ||
+        "";
+      const stationName =
+        prediction.stationName ||
+        prediction.stopName ||
+        prediction.stop_name ||
+        prediction.station ||
+        prediction.stationCode ||
+        stopId ||
+        "Stop";
+      const delay = Number(prediction.delay ?? prediction.delayMinutes ?? prediction.delay_min);
+      const etaMinutes = getPredictionClockMinutes(prediction);
+      return {
+        stopId,
+        stationId: stopId,
+        stationName,
+        scheduled,
+        actual,
+        delayMinutes: Number.isFinite(delay) ? delay : null,
+        etaMinutes: etaMinutes == null ? null : etaMinutes,
+        platform: prediction.track || prediction.platform || "",
+        source: sourceKey,
+      };
+    })
+    .filter((row) => row.stopId || row.stationName);
+
+  return rows.slice(0, 24);
 }
 
 function dedupeTrains(trains) {
@@ -1882,6 +1990,7 @@ async function loadTransitstatTrains(baseUrl, sourceKey) {
       const updatedTime = parseTransitstatTimestamp(
         prediction.lastUpdated || prediction.updatedAt || train.lastUpdated || payload.lastUpdated
       );
+      const upcomingStops = buildTransitstatUpcomingStops(train, sourceKey);
 
       return normalizeTrain(sourceKey, {
         id: train.runNumber,
@@ -1907,6 +2016,7 @@ async function loadTransitstatTrains(baseUrl, sourceKey) {
         lineTextColor: normalizeHexColor(
           train.lineTextColor || train.routeTextColor || train.line_text_color || train.route_text_color
         ),
+        upcomingStops,
       });
     })
     .filter(Boolean);
@@ -1973,6 +2083,7 @@ async function loadAmtrakerTrains() {
       "";
     const scheduled = station?.schArr || station?.schDep || entry.origSchDep || "";
     const actual = station?.arr || station?.dep || entry.lastValTS || entry.updatedAt || "";
+    const upcomingStops = buildAmtrakerUpcomingStops(entry, derivedDelayMinutes);
 
     return normalizeTrain("amtrak", {
       id: entry.trainID || entry.id || entry.trainNum || entry.routeName || "amtrak",
@@ -1993,6 +2104,7 @@ async function loadAmtrakerTrains() {
       confidence: "realtime",
       lastUpdated: entry.updatedAt || entry.lastValTS || new Date().toISOString(),
       lineColor: normalizeHexColor(entry.iconColor || "") || sourceDefaultColors.amtrak,
+      upcomingStops,
     });
   });
 }
@@ -2912,8 +3024,8 @@ function buildStopsFromRealtime(train) {
           ? Math.max(0, Math.round((actualMs - now) / 60000))
           : null;
       return {
-        stationId: row.stopId || "",
-        stationName: row.stopId || "Stop",
+        stationId: row.stationId || row.stopId || "",
+        stationName: row.stationName || row.stopName || row.stopId || "Stop",
         scheduled: toDisplayTime(row.scheduled),
         actual: toDisplayTime(actualIso),
         delayMinutes: Number.isFinite(Number(row.delayMinutes)) ? Number(row.delayMinutes) : null,
@@ -2921,8 +3033,34 @@ function buildStopsFromRealtime(train) {
         source: train.source,
       };
     })
-    .filter((row) => row.stationId)
+    .filter((row) => row.stationId || row.stationName)
     .slice(0, 12);
+}
+
+function buildAmtrakerUpcomingStops(entry, fallbackDelayMinutes = null) {
+  const stations = Array.isArray(entry?.stations) ? entry.stations : [];
+  const now = Date.now();
+  return stations
+    .map((station) => {
+      const scheduled = station.schArr || station.schDep || "";
+      const actual = station.estArr || station.estDep || station.arr || station.dep || station.postArr || station.postDep || scheduled;
+      const actualMs = Date.parse(actual);
+      const delay = deriveAmtrakerDelay(entry, station);
+      return {
+        stopId: station.code || station.stationCode || station.id || "",
+        stationName: station.stationName || station.name || station.code || "Stop",
+        scheduled,
+        actual,
+        delayMinutes: Number.isFinite(Number(delay))
+          ? Number(delay)
+          : (Number.isFinite(Number(fallbackDelayMinutes)) ? Number(fallbackDelayMinutes) : null),
+        etaMinutes: Number.isFinite(actualMs) ? Math.max(0, Math.round((actualMs - now) / 60000)) : null,
+        status: station.status || "",
+        platform: station.platform || station.track || "",
+      };
+    })
+    .filter((row) => row.stopId || row.stationName)
+    .slice(0, 24);
 }
 
 async function loadTrainStopsBySourceAndId(sourceKey, trainId) {
@@ -3328,6 +3466,47 @@ app.post("/api/sightings/upload", sightingsUpload.single("media"), async (req, r
   } catch (error) {
     const message = error?.message || "Upload failed";
     res.status(500).json({ error: message });
+  }
+});
+
+app.get("/api/gallery", async (_req, res) => {
+  try {
+    const photos = (await loadGalleryDb())
+      .filter((row) => row && row.id && row.mediaUrl)
+      .sort((a, b) => (b.createdAt || "").localeCompare(a.createdAt || ""));
+    res.json({ updatedAt: new Date().toISOString(), photos });
+  } catch {
+    res.status(500).json({ error: "Failed to load gallery" });
+  }
+});
+
+app.post("/api/gallery/upload", galleryUpload.single("photo"), async (req, res) => {
+  try {
+    const body = req.body || {};
+    const uploaderName = `${body.uploaderName || ""}`.trim().slice(0, 80);
+    const locationText = `${body.locationText || ""}`.trim().slice(0, 120);
+    const description = `${body.description || ""}`.trim().slice(0, 250);
+    if (!uploaderName || !locationText || !description || !req.file) {
+      res.status(400).json({ error: "Name, location, description, and photo are required" });
+      return;
+    }
+
+    const entry = {
+      id: `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`,
+      uploaderName,
+      locationText,
+      description,
+      mediaUrl: `/uploads/gallery/${req.file.filename}`,
+      mediaType: req.file.mimetype || "image/jpeg",
+      createdAt: new Date().toISOString(),
+    };
+
+    const current = await loadGalleryDb();
+    current.unshift(entry);
+    await saveGalleryDb(current.slice(0, 500));
+    res.json({ ok: true, photo: entry });
+  } catch (error) {
+    res.status(500).json({ error: error?.message || "Upload failed" });
   }
 });
 

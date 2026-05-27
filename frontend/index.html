@@ -35,7 +35,7 @@
         <span class="topbar-brand-version">BETA</span>
       </div>
       <div class="topbar-actions">
-        <button id="open-gallery-modal" class="topbar-nav-item" type="button" title="Open photo gallery">Gallery</button>
+        <button id="open-gallery-modal" class="topbar-nav-item" data-view="gallery" type="button" title="Open photo gallery">Gallery</button>
         <button id="open-download-modal" class="topbar-nav-item" type="button" title="Download desktop app">Download</button>
         <button id="account-toggle" class="account-toggle" title="Open account panel" aria-label="Open account panel" aria-expanded="false">
           <span class="account-toggle-avatar">G</span>
@@ -299,17 +299,17 @@
     </section>
 
     <nav class="bottom-nav" aria-label="Primary app navigation">
-      <button class="bottom-nav-item active" type="button" data-view="map" title="Map">
-        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m3 6 6-2 6 2 6-2v14l-6 2-6-2-6 2z"></path><path d="M9 4v14M15 6v14"></path></svg>
-        <span>Map</span>
+      <button class="bottom-nav-item" type="button" data-view="gallery" title="Gallery">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"></rect><circle cx="8" cy="10" r="1.5"></circle><path d="m21 15-5-5L5 19"></path></svg>
+        <span>Gallery</span>
       </button>
       <button id="bottom-nav-live" class="bottom-nav-item" type="button" data-view="live" title="Live board">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 17h12"></path><path d="M8 17l-2 3M16 17l2 3"></path><rect x="5" y="3" width="14" height="14" rx="2"></rect><path d="M9 7h6M8 12h.01M16 12h.01"></path></svg>
         <span>Live</span>
       </button>
-      <button id="btn-upload-find-top" class="bottom-nav-item bottom-nav-primary" type="button" data-view="log" title="Log sighting">
-        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg>
-        <span>Log</span>
+      <button class="bottom-nav-item bottom-nav-primary active" type="button" data-view="map" title="Map">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m3 6 6-2 6 2 6-2v14l-6 2-6-2-6 2z"></path><path d="M9 4v14M15 6v14"></path></svg>
+        <span>Map</span>
       </button>
       <button id="bottom-nav-alerts" class="bottom-nav-item" type="button" data-view="alerts" title="Service alerts">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10.3 3.5 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.5a2 2 0 0 0-3.4 0z"></path><path d="M12 9v5"></path><path d="M12 17h.01"></path></svg>
@@ -583,6 +583,10 @@
           <span class="settings-title">Freight infrastructure</span>
           <input id="setting-freight-visible" type="checkbox" />
         </label>
+        <label class="settings-row toggle" for="setting-signals-visible">
+          <span class="settings-title">Rail signals and crossings</span>
+          <input id="setting-signals-visible" type="checkbox" />
+        </label>
         <label class="settings-row" for="setting-freight-operator-highlight">
           <span class="settings-title">Freight map style</span>
           <select id="setting-freight-operator-highlight">
@@ -853,13 +857,31 @@
             <span class="settings-hero-kicker">Community</span>
             <h3>Railfan Gallery</h3>
             <p>Upload railroad photos with your name, a short description, and where the photo was taken.</p>
+            <div class="gallery-tools">
+              <input id="gallery-search" type="search" placeholder="Search UP, BNSF, CSX, Amtrak, locations..." autocomplete="off" />
+              <select id="gallery-railroad-filter">
+                <option value="all">All railroads</option>
+                <option value="up">UP / Union Pacific</option>
+                <option value="bnsf">BNSF</option>
+                <option value="ns">NS / Norfolk Southern</option>
+                <option value="csx">CSX</option>
+                <option value="amtrak">Amtrak</option>
+                <option value="cn">CN / Canadian National</option>
+                <option value="cpkc">CPKC / CP / KCS</option>
+                <option value="commuter">Commuter rail</option>
+              </select>
+              <button id="gallery-upload-toggle" class="btn-primary gallery-upload-toggle" type="button">Upload photo</button>
+            </div>
           </div>
           <div id="gallery-grid" class="gallery-grid">
             <p class="empty-state">Loading gallery...</p>
           </div>
         </section>
         <aside class="gallery-upload-panel">
-          <h4>Upload photo</h4>
+          <div class="gallery-upload-head">
+            <h4>Upload photo</h4>
+            <button id="gallery-upload-close" class="close-btn gallery-upload-close" type="button" aria-label="Close upload form">&#xD7;</button>
+          </div>
           <form id="gallery-upload-form" class="gallery-upload-form">
             <label class="settings-row" for="gallery-uploader-name">
               <span class="settings-title">Name</span>
@@ -883,6 +905,7 @@
           </form>
         </aside>
       </div>
+      <div id="gallery-photo-detail" class="gallery-photo-detail" aria-live="polite"></div>
     </div>
   </div>
 
@@ -899,6 +922,8 @@
           <button id="download-macos-intel" class="btn-primary download-btn" type="button">macOS Intel</button>
           <button id="download-macos-silicon" class="btn-primary download-btn" type="button">macOS Apple Silicon</button>
           <button id="download-windows" class="btn-primary download-btn" type="button">Windows</button>
+          <button id="download-linux-appimage" class="btn-primary download-btn" type="button">Linux AppImage</button>
+          <button id="download-linux-deb" class="btn-secondary download-btn" type="button">Linux .deb</button>
         </div>
       </div>
     </div>

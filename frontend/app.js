@@ -2657,6 +2657,10 @@ const elements = {
   galleryModal: document.getElementById("gallery-modal"),
   closeGalleryModal: document.getElementById("close-gallery-modal"),
   backGallery: document.getElementById("back-gallery"),
+  galleryUploadToggle: document.getElementById("gallery-upload-toggle"),
+  galleryUploadClose: document.getElementById("gallery-upload-close"),
+  gallerySearch: document.getElementById("gallery-search"),
+  galleryRailroadFilter: document.getElementById("gallery-railroad-filter"),
   galleryGrid: document.getElementById("gallery-grid"),
   galleryUploadForm: document.getElementById("gallery-upload-form"),
   galleryUploaderName: document.getElementById("gallery-uploader-name"),
@@ -2665,11 +2669,14 @@ const elements = {
   galleryDescriptionCount: document.getElementById("gallery-description-count"),
   galleryPhoto: document.getElementById("gallery-photo"),
   galleryUploadStatus: document.getElementById("gallery-upload-status"),
+  galleryPhotoDetail: document.getElementById("gallery-photo-detail"),
   downloadModal: document.getElementById("download-modal"),
   closeDownloadModal: document.getElementById("close-download-modal"),
   downloadMacIntel: document.getElementById("download-macos-intel"),
   downloadMacSilicon: document.getElementById("download-macos-silicon"),
   downloadWindows: document.getElementById("download-windows"),
+  downloadLinuxAppImage: document.getElementById("download-linux-appimage"),
+  downloadLinuxDeb: document.getElementById("download-linux-deb"),
   settingsModal: document.getElementById("settings-modal"),
   closeSettingsModal: document.getElementById("close-settings-modal"),
   openAboutModal: document.getElementById("open-about-modal"),
@@ -2790,7 +2797,7 @@ const defaultUiSettings = {
   proposedLinesVisible: false,
   freightVisible: false,
   openRailwayMapStyle: "standard",
-  signalVisible: false,
+  signalVisible: true,
   freightOperatorHighlight: "all",
   stationsVisible: true,
   heritageVisible: false,
@@ -6004,6 +6011,61 @@ async function loadGallery() {
   renderGallery();
 }
 
+const GALLERY_RAILROAD_KEYWORDS = {
+  up: ["up", "union pacific", "u.p."],
+  bnsf: ["bnsf", "burlington northern", "santa fe"],
+  ns: ["ns", "norfolk southern"],
+  csx: ["csx"],
+  amtrak: ["amtrak"],
+  cn: ["cn", "canadian national"],
+  cpkc: ["cpkc", "canadian pacific", "cp rail", "kansas city southern", "kcs"],
+  commuter: [
+    "metra",
+    "mta",
+    "lirr",
+    "metro-north",
+    "septa",
+    "mbta",
+    "nj transit",
+    "caltrain",
+    "dart",
+    "tre",
+    "texrail",
+    "front runner",
+    "sounder",
+    "go transit",
+    "via rail",
+    "brightline",
+  ],
+};
+
+function getGallerySearchText(photo) {
+  return [
+    photo?.uploaderName,
+    photo?.description,
+    photo?.locationText,
+    photo?.railroad,
+    photo?.railroadTag,
+    photo?.tags,
+  ]
+    .flat()
+    .filter(Boolean)
+    .join(" ")
+    .toLowerCase();
+}
+
+function filterGalleryPhotos(photos) {
+  const query = `${elements.gallerySearch?.value || ""}`.trim().toLowerCase();
+  const railroad = `${elements.galleryRailroadFilter?.value || "all"}`.trim().toLowerCase();
+  const railroadTerms = railroad === "all" ? [] : (GALLERY_RAILROAD_KEYWORDS[railroad] || [railroad]);
+  return photos.filter((photo) => {
+    const haystack = getGallerySearchText(photo);
+    const queryMatches = !query || query.split(/\s+/).every((term) => haystack.includes(term));
+    const railroadMatches = railroad === "all" || railroadTerms.some((term) => haystack.includes(term));
+    return queryMatches && railroadMatches;
+  });
+}
+
 function renderGallery() {
   if (!elements.galleryGrid) return;
   const photos = Array.isArray(state.galleryPhotos) ? state.galleryPhotos : [];
@@ -6011,14 +6073,19 @@ function renderGallery() {
     elements.galleryGrid.innerHTML = `<p class="empty-state">No photos yet. Be the first to add one.</p>`;
     return;
   }
-  elements.galleryGrid.innerHTML = photos
+  const filteredPhotos = filterGalleryPhotos(photos);
+  if (!filteredPhotos.length) {
+    elements.galleryGrid.innerHTML = `<p class="empty-state">No photos match that search.</p>`;
+    return;
+  }
+  elements.galleryGrid.innerHTML = filteredPhotos
     .map((photo) => {
       const created = photo.createdAt ? new Date(photo.createdAt) : null;
       const createdText = created && !Number.isNaN(created.getTime())
         ? created.toLocaleDateString([], { month: "short", day: "numeric", year: "numeric" })
         : "";
       return `
-        <article class="gallery-card">
+        <button class="gallery-card" type="button" data-gallery-photo-id="${escapeHtml(photo.id || "")}" aria-label="Open photo by ${escapeHtml(photo.uploaderName || "Railfan")}">
           <img src="${escapeHtml(photo.mediaUrl || "")}" alt="${escapeHtml(photo.description || "Rail gallery photo")}" loading="lazy" />
           <div class="gallery-card-body">
             <div class="gallery-card-meta">
@@ -6028,10 +6095,40 @@ function renderGallery() {
             <p>${escapeHtml(photo.description || "")}</p>
             <span class="gallery-location">${escapeHtml(photo.locationText || "")}</span>
           </div>
-        </article>
+        </button>
       `;
     })
     .join("");
+}
+
+function closeGalleryPhotoDetail() {
+  if (!elements.galleryPhotoDetail) return;
+  elements.galleryPhotoDetail.classList.remove("active");
+  elements.galleryPhotoDetail.innerHTML = "";
+}
+
+function openGalleryPhotoDetail(photoId) {
+  if (!elements.galleryPhotoDetail) return;
+  const photo = (state.galleryPhotos || []).find((row) => `${row.id}` === `${photoId}`);
+  if (!photo) return;
+  const created = photo.createdAt ? new Date(photo.createdAt) : null;
+  const createdText = created && !Number.isNaN(created.getTime())
+    ? created.toLocaleString([], { month: "short", day: "numeric", year: "numeric", hour: "numeric", minute: "2-digit" })
+    : "";
+  elements.galleryPhotoDetail.innerHTML = `
+    <div class="gallery-photo-detail__backdrop" data-close-gallery-photo></div>
+    <article class="gallery-photo-detail__panel">
+      <button class="close-btn gallery-photo-detail__close" type="button" data-close-gallery-photo aria-label="Close photo detail">&#xD7;</button>
+      <img src="${escapeHtml(photo.mediaUrl || "")}" alt="${escapeHtml(photo.description || "Rail gallery photo")}" />
+      <div class="gallery-photo-detail__body">
+        <span class="settings-hero-kicker">${escapeHtml(photo.locationText || "Railfan photo")}</span>
+        <h4>${escapeHtml(photo.uploaderName || "Railfan")}</h4>
+        <p>${escapeHtml(photo.description || "")}</p>
+        ${createdText ? `<span>${escapeHtml(createdText)}</span>` : ""}
+      </div>
+    </article>
+  `;
+  elements.galleryPhotoDetail.classList.add("active");
 }
 
 function updateGalleryDescriptionCount() {
@@ -6041,6 +6138,7 @@ function updateGalleryDescriptionCount() {
 }
 
 function openGalleryModal() {
+  elements.galleryModal?.querySelector(".gallery-content")?.classList.remove("gallery-upload-open");
   elements.galleryModal?.classList.add("active");
   updateGalleryDescriptionCount();
   loadGallery().catch(() => {
@@ -6049,9 +6147,18 @@ function openGalleryModal() {
 }
 
 function closeGalleryModal() {
+  closeGalleryPhotoDetail();
+  elements.galleryModal?.querySelector(".gallery-content")?.classList.remove("gallery-upload-open");
   elements.galleryModal?.classList.remove("active");
   if (document.body.dataset.appView === "gallery") {
-    setAppView("map");
+    setAppView(state.previousAppViewBeforeGallery || "map");
+  }
+}
+
+function setGalleryUploadOpen(open) {
+  elements.galleryModal?.querySelector(".gallery-content")?.classList.toggle("gallery-upload-open", Boolean(open));
+  if (open) {
+    window.setTimeout(() => elements.galleryUploaderName?.focus?.(), 50);
   }
 }
 
@@ -6103,6 +6210,7 @@ async function submitGalleryUpload(event) {
     }
     elements.galleryUploadForm?.reset();
     updateGalleryDescriptionCount();
+    setGalleryUploadOpen(false);
     if (elements.galleryUploadStatus) elements.galleryUploadStatus.textContent = "Photo uploaded.";
   } catch (error) {
     if (elements.galleryUploadStatus) elements.galleryUploadStatus.textContent = error?.message || "Upload failed.";
@@ -8646,6 +8754,22 @@ function updateThemeSensitiveLayers() {
   if (map.getLayer("openrailwaymap-signals")) {
     map.setPaintProperty("openrailwaymap-signals", "raster-opacity", isLightMode ? 0.72 : 0.82);
   }
+  ["orm-high-label", "orm-future-high-label", "orm-station-stops", "orm-rail-symbols-text", "orm-signals-text", "orm-signal-boxes-label"].forEach((layerId) => {
+    if (!map.getLayer(layerId)) return;
+    map.setPaintProperty(layerId, "text-color", routeLabelColor);
+    map.setPaintProperty(layerId, "text-halo-color", routeHaloColor);
+  });
+  if (map.getLayer("orm-rail-symbols-halo")) {
+    map.setPaintProperty("orm-rail-symbols-halo", "circle-opacity", isLightMode ? 0.22 : 0.32);
+    map.setPaintProperty("orm-rail-symbols-halo", "circle-stroke-color", isLightMode ? "rgba(255,255,255,0.9)" : "rgba(8,12,20,0.92)");
+  }
+  if (map.getLayer("orm-signals-halo")) {
+    map.setPaintProperty("orm-signals-halo", "circle-opacity", isLightMode ? 0.2 : 0.3);
+    map.setPaintProperty("orm-signals-halo", "circle-stroke-color", isLightMode ? "rgba(255,255,255,0.9)" : "rgba(8,12,20,0.92)");
+  }
+  if (map.getLayer("orm-station-areas-fill")) {
+    map.setPaintProperty("orm-station-areas-fill", "fill-opacity", isLightMode ? 0.15 : 0.22);
+  }
   if (map.getLayer("maintenance-point")) {
     map.setPaintProperty("maintenance-point", "text-halo-color", haloColor);
   }
@@ -10990,7 +11114,14 @@ function hideTrainTooltip() {
 
 function getServiceAlertText(train) {
   const alerts = collectServiceAlertEntries(train);
-  return alerts[0]?.text || "";
+  if (alerts[0]?.text) return alerts[0].text;
+  const delay = resolveDelayMinutes(train?.delayMinutes, train?.status);
+  if (Number.isFinite(Number(delay)) && Number(delay) > 5) {
+    const name = train?.name || formatMarkerLabel(train) || "Train";
+    const nextStop = train?.nextStop ? ` Next stop: ${train.nextStop}.` : "";
+    return `${name} is currently ${delayLabel(delay, train?.status).toLowerCase()}.${nextStop}`;
+  }
+  return "";
 }
 
 function normalizeServiceAlertText(value) {
@@ -11046,6 +11177,24 @@ function collectServiceAlertEntries(train) {
     }
     pushEntry(candidate);
   });
+
+  if (entries.length === 0) {
+    const delay = resolveDelayMinutes(train?.delayMinutes, train?.status);
+    if (Number.isFinite(Number(delay)) && Number(delay) > 5) {
+      const name = train?.name || formatMarkerLabel(train) || "Train";
+      const nextStop = train?.nextStop ? ` Next stop: ${train.nextStop}.` : "";
+      pushEntry(
+        {
+          text: `${name} is currently ${delayLabel(delay, train?.status).toLowerCase()}.${nextStop}`,
+          source: sources[train.source]?.label || train.source || "Reported",
+          timestamp: train.lastUpdated || "",
+          firstSeenAt: train.lastUpdated || "",
+        },
+        "Reported",
+        train.lastUpdated || ""
+      );
+    }
+  }
 
   return entries.slice(0, 8);
 }
@@ -12388,20 +12537,100 @@ function getOpenRailwayMapSymbolIdFromPath(pathValue) {
 
 function resolveOpenRailwayMapImageExpression(scope = "general", fallback = "site") {
   return ["coalesce",
+    ["image", ["concat", `${OPENRAILWAYMAP_SYMBOL_ID_PREFIX}-`, ["get", "feature"]]],
     ["image", ["concat", `${OPENRAILWAYMAP_SYMBOL_ID_PREFIX}-${scope}-`, ["get", "feature"]]],
     ["image", getOpenRailwayMapSymbolId(scope, fallback)],
   ];
 }
 
+function getOpenRailwayMapFeatureIconExpression() {
+  return ["coalesce",
+    ["image", ["concat", `${OPENRAILWAYMAP_SYMBOL_ID_PREFIX}-`, ["get", "feature"]]],
+    ["image", ["match", ["get", "feature"],
+      "general/level-crossing", getOpenRailwayMapSymbolId("general", "level-crossing"),
+      "general/level-crossing-light", getOpenRailwayMapSymbolId("general", "level-crossing-light"),
+      "general/level-crossing-barrier", getOpenRailwayMapSymbolId("general", "level-crossing-barrier"),
+      "general/level-crossing-light-barrier", getOpenRailwayMapSymbolId("general", "level-crossing-light-barrier"),
+      "general/crossing", getOpenRailwayMapSymbolId("general", "crossing"),
+      "level_crossing", getOpenRailwayMapSymbolId("general", "level-crossing"),
+      "crossing", getOpenRailwayMapSymbolId("general", "crossing"),
+      "railway_crossing", getOpenRailwayMapSymbolId("general", "railway-crossing"),
+      "halt", getOpenRailwayMapSymbolId("general", "halt"),
+      "station", getOpenRailwayMapSymbolId("general", "station-normal"),
+      "tram_stop", getOpenRailwayMapSymbolId("general", "tram_stop"),
+      "junction", getOpenRailwayMapSymbolId("general", "junction"),
+      "yard", getOpenRailwayMapSymbolId("general", "yard"),
+      "turntable", getOpenRailwayMapSymbolId("general", "turntable"),
+      "buffer_stop", getOpenRailwayMapSymbolId("general", "buffer_stop"),
+      "defect_detector", getOpenRailwayMapSymbolId("general", "defect_detector"),
+      "derail", getOpenRailwayMapSymbolId("general", "derail"),
+      "crossover", getOpenRailwayMapSymbolId("general", "crossover"),
+      "subway_entrance", getOpenRailwayMapSymbolId("general", "subway-entrance"),
+      getOpenRailwayMapSymbolId("general", "site"),
+    ]],
+    ["image", "orm-icon-crossing"],
+  ];
+}
+
+function getOpenRailwayMapSwitchIconExpression() {
+  return ["coalesce",
+    ["image", ["match", ["coalesce", ["get", "railway"], ["get", "type"], ""],
+      "railway_crossing", getOpenRailwayMapSymbolId("general", "railway-crossing"),
+      "double_slip", getOpenRailwayMapSymbolId("general", "switch-double-slip"),
+      "single_slip", getOpenRailwayMapSymbolId("general", "switch-single-slip"),
+      "three_way", getOpenRailwayMapSymbolId("general", "switch-three-way"),
+      "wye", getOpenRailwayMapSymbolId("general", "switch-wye"),
+      "abt", getOpenRailwayMapSymbolId("general", "switch-abt"),
+      getOpenRailwayMapSymbolId("general", "switch-default"),
+    ]],
+    ["image", "orm-icon-switch"],
+  ];
+}
+
+function getOpenRailwayMapSignalIconExpression() {
+  return ["coalesce",
+    ["image", ["concat", `${OPENRAILWAYMAP_SYMBOL_ID_PREFIX}-`, ["get", "feature0"]]],
+    ["image", ["concat", `${OPENRAILWAYMAP_SYMBOL_ID_PREFIX}-`, ["get", "feature1"]]],
+    ["image", ["concat", `${OPENRAILWAYMAP_SYMBOL_ID_PREFIX}-`, ["get", "feature2"]]],
+    ["image", ["match", ["get", "feature0"],
+      "main", getOpenRailwayMapSymbolId("us", "main"),
+      "distant", getOpenRailwayMapSymbolId("us", "distant"),
+      "us/main", getOpenRailwayMapSymbolId("us", "main"),
+      "us/distant", getOpenRailwayMapSymbolId("us", "distant"),
+      "ca/main", getOpenRailwayMapSymbolId("ca", "main"),
+      "general/signal-unknown-main", getOpenRailwayMapSymbolId("general", "signal-unknown-main"),
+      "general/signal-unknown-distant", getOpenRailwayMapSymbolId("general", "signal-unknown-distant"),
+      "general/signal-unknown-combined", getOpenRailwayMapSymbolId("general", "signal-unknown-combined"),
+      "combined", getOpenRailwayMapSymbolId("general", "signal-unknown-combined"),
+      "minor", getOpenRailwayMapSymbolId("general", "signal-unknown-minor"),
+      "minor_distant", getOpenRailwayMapSymbolId("general", "signal-unknown-minor_distant"),
+      "speed_limit", getOpenRailwayMapSymbolId("general", "signal-unknown-speed_limit"),
+      "speed_limit_distant", getOpenRailwayMapSymbolId("general", "signal-unknown-speed_limit_distant"),
+      "crossing", getOpenRailwayMapSymbolId("general", "signal-unknown-crossing"),
+      "crossing_distant", getOpenRailwayMapSymbolId("general", "signal-unknown-crossing_distant"),
+      "departure", getOpenRailwayMapSymbolId("general", "signal-unknown-departure"),
+      "shunting", getOpenRailwayMapSymbolId("general", "signal-unknown-shunting"),
+      "stop", getOpenRailwayMapSymbolId("general", "signal-unknown-stop"),
+      "stop_distant", getOpenRailwayMapSymbolId("general", "signal-unknown-stop_distant"),
+      "switch", getOpenRailwayMapSymbolId("general", "signal-unknown-switch"),
+      "whistle", getOpenRailwayMapSymbolId("general", "signal-unknown-whistle"),
+      getOpenRailwayMapSymbolId("general", "signal-unknown"),
+    ]],
+    ["image", getOpenRailwayMapSymbolId("general", "signal-unknown")],
+    ["image", "orm-icon-signal"],
+  ];
+}
+
 async function loadOpenRailwayMapSvgSymbols(map = state.map) {
-  if (!map || state.openRailwayMapSvgSymbolsLoaded || state.openRailwayMapSvgSymbolsLoading) return;
+  const probeId = getOpenRailwayMapSymbolId("general", "level-crossing");
+  if (!map || (state.openRailwayMapSvgSymbolsLoaded && map.hasImage?.(probeId)) || state.openRailwayMapSvgSymbolsLoading) return;
   state.openRailwayMapSvgSymbolsLoading = true;
   try {
     const response = await fetch(OPENRAILWAYMAP_SYMBOL_MANIFEST_URL, { cache: "force-cache" });
     if (!response.ok) throw new Error("ORM symbol manifest unavailable");
     const manifest = await response.json();
     const symbols = Array.isArray(manifest?.symbols) ? manifest.symbols : [];
-    await Promise.all(symbols.map(async (pathValue) => {
+    await Promise.allSettled(symbols.map(async (pathValue) => {
       const id = getOpenRailwayMapSymbolIdFromPath(pathValue);
       if (map.hasImage?.(id)) return;
       const image = new Image();
@@ -12419,14 +12648,19 @@ async function loadOpenRailwayMapSvgSymbols(map = state.map) {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
       const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-      map.addImage(id, imageData, { pixelRatio: 2 });
+      const addAlias = (aliasId) => {
+        if (!aliasId || map.hasImage?.(aliasId)) return;
+        map.addImage(aliasId, imageData, { pixelRatio: 2 });
+      };
+      addAlias(id);
       const parts = `${pathValue}`.split("/");
       const scope = parts[1] || "general";
       const base = (parts.at(-1) || "").replace(/\.svg$/i, "");
       const aliasId = getOpenRailwayMapSymbolAliasId(scope, base);
-      if (aliasId !== id && !map.hasImage?.(aliasId)) {
-        map.addImage(aliasId, imageData, { pixelRatio: 2 });
-      }
+      addAlias(aliasId);
+      addAlias(`${OPENRAILWAYMAP_SYMBOL_ID_PREFIX}-${scope}/${base}`);
+      addAlias(`${OPENRAILWAYMAP_SYMBOL_ID_PREFIX}-${scope}/${base.replace(/_/g, "-")}`);
+      addAlias(`${OPENRAILWAYMAP_SYMBOL_ID_PREFIX}-${scope}/${base.replace(/-/g, "_")}`);
     }));
     state.openRailwayMapSvgSymbolsLoaded = true;
   } catch (error) {
@@ -12858,6 +13092,32 @@ function ensureOpenRailwayMapFreightLayers(map = state.map) {
     }, beforeLayer);
   }
   if (!map.getLayer("orm-rail-symbols")) {
+    if (!map.getLayer("orm-rail-symbols-halo")) {
+      map.addLayer({
+        id: "orm-rail-symbols-halo",
+        type: "circle",
+        source: OPENRAILWAYMAP_DETAIL_SOURCE.sourceId,
+        "source-layer": "standard_railway_symbols",
+        minzoom: 12,
+        layout: { visibility: "none" },
+        paint: {
+          "circle-color": ["match", ["coalesce", ["get", "feature"], ""],
+            "general/level-crossing-light-barrier", "#ef4444",
+            "general/level-crossing-light", "#f97316",
+            "general/level-crossing-barrier", "#facc15",
+            "general/level-crossing", "#38bdf8",
+            "general/crossing", "#ef4444",
+            "level_crossing", "#38bdf8",
+            "crossing", "#ef4444",
+            "#a855f7",
+          ],
+          "circle-radius": ["interpolate", ["linear"], ["zoom"], 12, 6, 16, 10],
+          "circle-opacity": document.body.classList.contains("light") ? 0.22 : 0.32,
+          "circle-stroke-color": document.body.classList.contains("light") ? "rgba(255,255,255,0.9)" : "rgba(8,12,20,0.92)",
+          "circle-stroke-width": 1,
+        },
+      }, beforeLayer);
+    }
     map.addLayer({
       id: "orm-rail-symbols",
       type: "symbol",
@@ -12865,10 +13125,7 @@ function ensureOpenRailwayMapFreightLayers(map = state.map) {
       "source-layer": "standard_railway_symbols",
       minzoom: 12,
       layout: {
-        "icon-image": ["coalesce",
-          ["image", ["concat", `${OPENRAILWAYMAP_SYMBOL_ID_PREFIX}-general-`, ["get", "feature"]]],
-          ["image", "orm-icon-crossing"],
-        ],
+        "icon-image": getOpenRailwayMapFeatureIconExpression(),
         "icon-size": ["interpolate", ["linear"], ["zoom"], 12, 0.36, 16, 0.68],
         "icon-allow-overlap": true,
         "icon-ignore-placement": true,
@@ -12884,10 +13141,7 @@ function ensureOpenRailwayMapFreightLayers(map = state.map) {
       "source-layer": "standard_railway_symbols",
       minzoom: 12,
       layout: {
-        "text-field": ["case",
-          ["in", ["get", "feature"], ["literal", ["level_crossing", "crossing"]]], "X",
-          ["coalesce", ["get", "ref"], ""],
-        ],
+        "text-field": ["coalesce", ["get", "ref"], ""],
         "text-font": ["Noto Sans Bold"],
         "text-size": ["interpolate", ["linear"], ["zoom"], 12, 10, 16, 12],
         "text-letter-spacing": 0,
@@ -12947,14 +13201,7 @@ function ensureOpenRailwayMapFreightLayers(map = state.map) {
       "source-layer": "standard_railway_switch_ref",
       minzoom: 13,
       layout: {
-        "icon-image": ["coalesce",
-          ["image", ["case",
-            ["==", ["get", "railway"], "railway_crossing"], getOpenRailwayMapSymbolId("general", "railway-crossing"),
-            ["concat", `${OPENRAILWAYMAP_SYMBOL_ID_PREFIX}-general-switch-`, ["coalesce", ["get", "type"], "default"]],
-          ]],
-          ["image", getOpenRailwayMapSymbolId("general", "switch-default")],
-          ["image", "orm-icon-switch"],
-        ],
+        "icon-image": getOpenRailwayMapSwitchIconExpression(),
         "icon-size": ["interpolate", ["linear"], ["zoom"], 13, 0.36, 17, 0.68],
         "icon-allow-overlap": true,
         "icon-ignore-placement": true,
@@ -12974,6 +13221,28 @@ function ensureOpenRailwayMapFreightLayers(map = state.map) {
     }, beforeLayer);
   }
   if (!map.getLayer("orm-signals")) {
+    if (!map.getLayer("orm-signals-halo")) {
+      map.addLayer({
+        id: "orm-signals-halo",
+        type: "circle",
+        source: OPENRAILWAYMAP_SIGNALS_SOURCE.sourceId,
+        "source-layer": "signals_railway_signals",
+        minzoom: 12,
+        layout: { visibility: "none" },
+        paint: {
+          "circle-color": ["case",
+            ["==", ["get", "deactivated0"], true], "#64748b",
+            ["in", ["get", "feature0"], ["literal", ["general/signal-unknown-distant", "distant", "us/distant", "speed_limit", "speed_limit_distant"]]], "#facc15",
+            ["in", ["get", "feature0"], ["literal", ["general/signal-unknown-main", "main", "us/main", "ca/main", "combined", "minor"]]], "#ef4444",
+            "#22c55e",
+          ],
+          "circle-radius": ["interpolate", ["linear"], ["zoom"], 12, 6, 17, 10],
+          "circle-opacity": document.body.classList.contains("light") ? 0.2 : 0.3,
+          "circle-stroke-color": document.body.classList.contains("light") ? "rgba(255,255,255,0.9)" : "rgba(8,12,20,0.92)",
+          "circle-stroke-width": 1,
+        },
+      }, beforeLayer);
+    }
     map.addLayer({
       id: "orm-signals",
       type: "symbol",
@@ -12981,15 +13250,7 @@ function ensureOpenRailwayMapFreightLayers(map = state.map) {
       "source-layer": "signals_railway_signals",
       minzoom: 12,
       layout: {
-        "icon-image": ["coalesce",
-          ["image", ["case",
-            ["in", ["get", "feature0"], ["literal", ["main", "distant"]]],
-            ["concat", `${OPENRAILWAYMAP_SYMBOL_ID_PREFIX}-us-`, ["get", "feature0"]],
-            ["concat", `${OPENRAILWAYMAP_SYMBOL_ID_PREFIX}-general-signal-unknown-`, ["coalesce", ["get", "feature0"], "unknown"]],
-          ]],
-          ["image", getOpenRailwayMapSymbolId("general", "signal-unknown")],
-          ["image", "orm-icon-signal"],
-        ],
+        "icon-image": getOpenRailwayMapSignalIconExpression(),
         "icon-size": ["interpolate", ["linear"], ["zoom"], 12, 0.34, 17, 0.66],
         "icon-rotate": ["coalesce", ["get", "azimuth"], 0],
         "icon-rotation-alignment": "map",
@@ -13134,10 +13395,12 @@ function getOpenRailwayMapDetailLayerIds() {
     "orm-station-areas-fill",
     "orm-station-areas-outline",
     "orm-station-stops",
+    "orm-rail-symbols-halo",
     "orm-rail-symbols",
     "orm-rail-symbols-text",
     "orm-stop-positions",
     "orm-switches",
+    "orm-signals-halo",
     "orm-signals",
     "orm-signals-aspect",
     "orm-signals-text",
@@ -13159,6 +13422,7 @@ function getOpenRailwayMapDetailHitLayerIds() {
 
 function getOpenRailwayMapSignalLayerIds() {
   return [
+    "orm-signals-halo",
     "orm-signals",
     "orm-signals-aspect",
     "orm-signals-text",
@@ -13192,10 +13456,11 @@ function applyOpenRailwayMapVisibility() {
   ["orm-high-hit", "orm-high-label"].forEach((layerId) => {
     if (state.map.getLayer(layerId)) state.map.setLayoutProperty(layerId, "visibility", visible);
   });
+  const detailVisible = state.freightVisible || state.signalVisible ? "visible" : "none";
   [...getOpenRailwayMapDetailLayerIds(), ...getOpenRailwayMapDetailHitLayerIds()].forEach((layerId) => {
-    if (state.map.getLayer(layerId)) state.map.setLayoutProperty(layerId, "visibility", visible);
+    if (state.map.getLayer(layerId)) state.map.setLayoutProperty(layerId, "visibility", detailVisible);
   });
-  const signalVisible = state.freightVisible || state.signalVisible ? "visible" : "none";
+  const signalVisible = state.signalVisible ? "visible" : "none";
   getOpenRailwayMapSignalLayerIds().forEach((layerId) => {
     if (state.map.getLayer(layerId)) state.map.setLayoutProperty(layerId, "visibility", signalVisible);
   });
@@ -13657,6 +13922,7 @@ function setFreightVisible(visible) {
 
   renderRoutes([...(state.routes || []), ...(state.commuterRoutes || []), ...(state.freightRoutes || [])]);
   applyRouteVisibility();
+  applySignalVisibility();
 }
 
 function setFreightOperatorHighlight(value) {
@@ -13668,6 +13934,7 @@ function setFreightOperatorHighlight(value) {
   if (elements.settingFreightOperatorHighlight) {
     elements.settingFreightOperatorHighlight.value = nextStyle;
   }
+  applySignalVisibility();
   applyOpenRailwayMapVisibility();
 }
 
@@ -13943,29 +14210,36 @@ function processRenderQueue() {
     const liveClass = train.realTime ? "live" : "scheduled";
     const speedNumber = Number(train.speed);
     const speedText = Number.isFinite(speedNumber) && speedNumber > 0 ? `${Math.round(speedNumber)} mph` : "--";
+    const nextStopText = train.nextStop || "Upcoming stop unavailable";
+    const etaDisplay = formatServiceTime(train.actual || train.eta || "");
 
     const routeLabel = getRouteDisplayLabel(train);
     const contentHash = `${train.delayMinutes}:${train.status}:${train.nextStop}:${train.eta}:${routeLabel}:${formatUpdatedTimestamp(train.lastUpdated)}`;
     if (card.dataset.hash !== contentHash) {
       card.dataset.hash = contentHash;
       card.innerHTML = `
+        <div class="train-card-upcoming">
+          <span>Upcoming stop</span>
+          <strong>${escapeHtml(nextStopText)}</strong>
+          <em>${escapeHtml(etaDisplay || "--")}</em>
+        </div>
         <div class="train-card-head">
-          <span class="train-card-id">${formatMarkerLabel(train)}</span>
+          <span class="train-card-id">${escapeHtml(formatMarkerLabel(train))}</span>
           <div class="train-card-title-wrap">
-            <h3 class="train-card-title">${train.name}</h3>
-            <p class="train-card-sub">${sources[train.source]?.label || train.source} • ${routeLabel}</p>
+            <h3 class="train-card-title">${escapeHtml(train.name)}</h3>
+            <p class="train-card-sub">${escapeHtml(sources[train.source]?.label || train.source)} • ${escapeHtml(routeLabel)}</p>
           </div>
         </div>
         <div class="train-kpis">
-          <div class="kpi"><span>Next</span><strong>${train.nextStop || "--"}</strong></div>
-          <div class="kpi"><span>ETA</span><strong>${formatServiceTime(train.actual || train.eta || "")}</strong></div>
-          <div class="kpi"><span>Sched</span><strong>${formatServiceTime(train.scheduled || "")}</strong></div>
-          <div class="kpi"><span>Speed</span><strong>${speedText}</strong></div>
+          <div class="kpi"><span>Next</span><strong>${escapeHtml(train.nextStop || "--")}</strong></div>
+          <div class="kpi"><span>ETA</span><strong>${escapeHtml(etaDisplay)}</strong></div>
+          <div class="kpi"><span>Sched</span><strong>${escapeHtml(formatServiceTime(train.scheduled || ""))}</strong></div>
+          <div class="kpi"><span>Speed</span><strong>${escapeHtml(speedText)}</strong></div>
         </div>
         <div class="train-meta">
-          <span class="badge ${delayClass(train.delayMinutes, train.status)}">${delayLabel(train.delayMinutes, train.status)}</span>
-          <span class="status-indicator ${liveClass}">${formatStatusLabel(train)}</span>
-          <span class="meta-updated">${formatUpdatedTimestamp(train.lastUpdated)}</span>
+          <span class="badge ${delayClass(train.delayMinutes, train.status)}">${escapeHtml(delayLabel(train.delayMinutes, train.status))}</span>
+          <span class="status-indicator ${liveClass}">${escapeHtml(formatStatusLabel(train))}</span>
+          <span class="meta-updated">${escapeHtml(formatUpdatedTimestamp(train.lastUpdated))}</span>
         </div>
         <button class="save-btn" data-id="${id}">
           ${isSaved ? "Saved" : "Save"}
@@ -14129,14 +14403,22 @@ function closeTransientSurfaces() {
   elements.sightingModal?.classList.remove("active");
   elements.accountSidebar?.classList.remove("account-sidebar-open");
   elements.downloadModal?.classList.remove("active");
+  closeGalleryPhotoDetail();
   elements.galleryModal?.classList.remove("active");
 }
 
 function setAppView(view = "map") {
+  const currentView = document.body.dataset.appView || "map";
   const nextView = ["map", "live", "log", "alerts", "settings", "gallery"].includes(view) ? view : "map";
+  if (nextView === "gallery" && currentView !== "gallery") {
+    state.previousAppViewBeforeGallery = currentView;
+  }
   document.body.dataset.appView = nextView;
 
   document.querySelectorAll(".bottom-nav-item").forEach((item) => {
+    item.classList.toggle("active", item.dataset.view === nextView);
+  });
+  document.querySelectorAll(".topbar-nav-item[data-view]").forEach((item) => {
     item.classList.toggle("active", item.dataset.view === nextView);
   });
 
@@ -15143,12 +15425,22 @@ function selectTrain(train) {
   const shouldRefreshStops = !isFreightCommunity && (!cachedStops || (Date.now() - cachedStops.fetchedAt) > 30_000);
   if (shouldRefreshStops) {
     fetch(apiUrl(`/api/train-stops/${source}/${id}`))
-      .then((response) => response.json())
+      .then((response) => {
+        if (!response.ok) throw new Error("Stops unavailable");
+        return response.json();
+      })
       .then((payload) => {
         if (token !== state.photoSelectionToken || !stopsPanel) return;
         const stops = Array.isArray(payload?.stops) ? payload.stops : [];
-        state.trainStopsCache.set(trainStopsCacheKey, { fetchedAt: Date.now(), stops });
-        stopsPanel.innerHTML = renderTrainStopsPanelMarkup(stops);
+        if (stops.length > 0) {
+          state.trainStopsCache.set(trainStopsCacheKey, { fetchedAt: Date.now(), stops });
+          stopsPanel.innerHTML = renderTrainStopsPanelMarkup(stops);
+        } else if (fallbackStops) {
+          stopsPanel.innerHTML = renderTrainStopsPanelMarkup(fallbackStops);
+        } else {
+          state.trainStopsCache.set(trainStopsCacheKey, { fetchedAt: Date.now(), stops });
+          stopsPanel.innerHTML = renderTrainStopsPanelMarkup(stops);
+        }
       })
       .catch(() => {
         if (token !== state.photoSelectionToken || !stopsPanel) return;
@@ -16629,11 +16921,25 @@ function attachEvents() {
   });
   elements.closeGalleryModal?.addEventListener("click", closeGalleryModal);
   elements.backGallery?.addEventListener("click", () => {
-    setAppView("map");
+    closeGalleryModal();
   });
+  elements.galleryUploadToggle?.addEventListener("click", () => setGalleryUploadOpen(true));
+  elements.galleryUploadClose?.addEventListener("click", () => setGalleryUploadOpen(false));
   elements.galleryModal?.addEventListener("click", (event) => {
     if (event.target === elements.galleryModal) closeGalleryModal();
   });
+  elements.galleryGrid?.addEventListener("click", (event) => {
+    const card = event.target?.closest?.("[data-gallery-photo-id]");
+    if (!card) return;
+    openGalleryPhotoDetail(card.dataset.galleryPhotoId);
+  });
+  elements.galleryPhotoDetail?.addEventListener("click", (event) => {
+    if (event.target?.closest?.("[data-close-gallery-photo]")) {
+      closeGalleryPhotoDetail();
+    }
+  });
+  elements.gallerySearch?.addEventListener("input", renderGallery);
+  elements.galleryRailroadFilter?.addEventListener("change", renderGallery);
   elements.galleryDescription?.addEventListener("input", updateGalleryDescriptionCount);
   elements.galleryUploadForm?.addEventListener("submit", submitGalleryUpload);
 
@@ -16646,13 +16952,19 @@ function attachEvents() {
     if (event.target === elements.downloadModal) closeDownloadModal();
   });
   elements.downloadMacIntel?.addEventListener("click", () => {
-    openDownloadLink("https://github.com/Syphon1205/OpenRailTracker/releases/download/v1.0.0/OpenRailTracker-1.0.0-mac-x64.dmg");
+    openDownloadLink(`/downloads/OpenRailTracker-${APP_VERSION}-mac-x64.dmg`);
   });
   elements.downloadMacSilicon?.addEventListener("click", () => {
-    openDownloadLink("https://github.com/Syphon1205/OpenRailTracker/releases/download/v1.0.0/OpenRailTracker-1.0.0-mac-arm64.dmg");
+    openDownloadLink(`/downloads/OpenRailTracker-${APP_VERSION}-mac-arm64.dmg`);
   });
   elements.downloadWindows?.addEventListener("click", () => {
-    openDownloadLink("https://github.com/Syphon1205/OpenRailTracker/releases/download/v1.0.0/OpenRailTracker-1.0.0-win-x64.exe");
+    openDownloadLink(`/downloads/OpenRailTracker-${APP_VERSION}-win-x64.exe`);
+  });
+  elements.downloadLinuxAppImage?.addEventListener("click", () => {
+    openDownloadLink(`/downloads/OpenRailTracker-${APP_VERSION}-linux-x86_64.AppImage`);
+  });
+  elements.downloadLinuxDeb?.addEventListener("click", () => {
+    openDownloadLink(`/downloads/OpenRailTracker-${APP_VERSION}-linux-amd64.deb`);
   });
 
   elements.saveSettings?.addEventListener("click", () => {

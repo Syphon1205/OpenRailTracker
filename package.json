@@ -1,6 +1,6 @@
 {
   "name": "openrailtracker",
-  "version": "0.4.0",
+  "version": "1.0.0",
   "description": "Live passenger rail tracking app for desktop",
   "private": true,
   "author": {
@@ -13,11 +13,15 @@
   "scripts": {
     "start": "lsof -ti:3000 | xargs -r kill; npm --prefix backend start",
     "dev": "lsof -ti:3000 | xargs kill -9 2>/dev/null; npm --prefix backend start",
-    "build": "npm --prefix backend install --no-audit --no-fund",
+    "build": "npm --prefix backend install --no-audit --no-fund && node --check backend/server.js && node --check frontend/app.js && node --check electron/main.cjs",
     "dist": "npm run build && electron-builder",
     "dist:mac": "npm run build && electron-builder --mac",
+    "dist:mac:intel": "npm run build && electron-builder --mac --x64",
+    "dist:mac:silicon": "npm run build && electron-builder --mac --arm64",
     "dist:linux": "npm run build && electron-builder --linux",
     "dist:win": "npm run build && electron-builder --win",
+    "dist:win:x64": "npm run build && electron-builder --win --x64",
+    "dist:linux:x64": "npm run build && electron-builder --linux --x64",
     "dist:all": "npm run build && electron-builder --mac --linux --win",
     "landmarks:validate": "node scripts/validate-landmark-manifest.mjs",
     "electron": "electron electron/main.cjs",
@@ -38,6 +42,7 @@
     "directories": {
       "output": "dist"
     },
+    "artifactName": "OpenRailTracker-${version}-${os}-${arch}.${ext}",
     "files": [
       "electron/**/*",
       "package.json"
@@ -93,8 +98,7 @@
     },
     "win": {
       "target": [
-        "nsis",
-        "portable"
+        "nsis"
       ]
     }
   }
